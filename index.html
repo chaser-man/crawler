@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mobile Game with Long Obstacles</title>
+    <title>Mobile Game with Scoring</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
@@ -63,10 +63,14 @@
         // Enemies array
         const enemies = [];
 
+        // Score
+        let score = 0;
+        let scoreInterval;
+
         // Initialize obstacles with a 4:1 length-to-width ratio
         function initObstacles() {
             obstacles.length = 0; // Clear any existing obstacles
-            const numberOfObstacles = 6;
+            const numberOfObstacles = 4;
 
             const MIN_LENGTH = 100; // Minimum length of the obstacle
             const MAX_LENGTH = 200; // Maximum length of the obstacle
@@ -184,6 +188,14 @@
             });
         }
 
+        // Function to draw score
+        function drawScore() {
+            ctx.fillStyle = '#ffffff'; // White color
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('Score: ' + score, 10, 30);
+        }
+
         // Function to clear the canvas (fill it with black)
         function clearCanvas() {
             ctx.fillStyle = '#000'; // Set the fill style to black
@@ -198,10 +210,24 @@
             drawObstacles();
             drawEnemies();
             drawPlayer();
+            drawScore();
             requestAnimationFrame(gameLoop);
         }
 
         gameLoop();
+
+        // Start the score timer
+        function startScoreTimer() {
+            score = 0; // Reset score
+            if (scoreInterval) {
+                clearInterval(scoreInterval);
+            }
+            scoreInterval = setInterval(() => {
+                score++;
+            }, 1000);
+        }
+
+        startScoreTimer();
 
         // Update player position
         function updatePlayerPosition() {
@@ -330,7 +356,7 @@
 
         // Function to handle game over
         function gameOver() {
-            alert('Game Over!');
+            alert('Game Over! Your score was: ' + score);
             // Reset game
             resetGame();
         }
@@ -344,6 +370,8 @@
             // Re-initialize obstacles and enemies
             initObstacles();
             initEnemies();
+            // Reset score timer
+            startScoreTimer();
         }
 
         // Virtual joystick setup using nippleJS

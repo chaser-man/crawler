@@ -5,7 +5,7 @@ const player = {
     x: 200,
     y: 200,
     size: 20,
-    speed: 10
+    speed: 50
 };
 
 const keys = {};

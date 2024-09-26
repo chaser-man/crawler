@@ -5,7 +5,7 @@ const player = {
     x: 200,
     y: 200,
     size: 20,
-    speed: 50
+    speed: 5 // Reduced speed for smoother movement
 };
 
 const keys = {};
@@ -16,8 +16,7 @@ function drawPlayer() {
 }
 
 function clearCanvas() {
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the entire canvas
 }
 
 function updatePlayerPosition() {
@@ -28,11 +27,11 @@ function updatePlayerPosition() {
 }
 
 window.addEventListener('keydown', function(e) {
-    keys[e.key] = true;
+    keys[e.code] = true; // Use e.code for consistent key values
 });
 
 window.addEventListener('keyup', function(e) {
-    keys[e.key] = false;
+    keys[e.code] = false;
 });
 
 function gameLoop() {

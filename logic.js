@@ -5,7 +5,7 @@ const player = {
     x: 200,
     y: 200,
     size: 20,
-    speed: 3
+    speed: 10
 };
 
 const keys = {};
@@ -21,10 +21,10 @@ function clearCanvas() {
 }
 
 function updatePlayerPosition() {
-    if (keys['ArrowUp'] && player.y > 0) player.y -= player.speed;
-    if (keys['ArrowDown'] && player.y < canvas.height - player.size) player.y += player.speed;
-    if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
-    if (keys['ArrowRight'] && player.x < canvas.width - player.size) player.x += player.speed;
+    if (keys['ArrowUp']) player.y -= player.speed;
+    if (keys['ArrowDown']) player.y += player.speed;
+    if (keys['ArrowLeft']) player.x -= player.speed;
+    if (keys['ArrowRight']) player.x += player.speed;
 }
 
 window.addEventListener('keydown', (e) => {

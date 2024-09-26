@@ -18,26 +18,19 @@ function clearCanvas() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function updatePlayerPosition(keys) {
-    if (keys.ArrowUp && player.y > 0) player.y -= player.speed;
-    if (keys.ArrowDown && player.y < canvas.height - player.size) player.y += player.speed;
-    if (keys.ArrowLeft && player.x > 0) player.x -= player.speed;
-    if (keys.ArrowRight && player.x < canvas.width - player.size) player.x += player.speed;
+function updatePlayerPosition(key) {
+    if (key === 'ArrowUp' && player.y > 0) player.y -= player.speed;
+    if (key === 'ArrowDown' && player.y < canvas.height - player.size) player.y += player.speed;
+    if (key === 'ArrowLeft' && player.x > 0) player.x -= player.speed;
+    if (key === 'ArrowRight' && player.x < canvas.width - player.size) player.x += player.speed;
 }
 
-const keys = {};
-
-window.addEventListener('keydown', (e) => {
-    keys[e.key] = true;
-});
-
-window.addEventListener('keyup', (e) => {
-    keys[e.key] = false;
+window.addEventListener('keypress', (e) => {
+    updatePlayerPosition(e.key);
 });
 
 function gameLoop() {
     clearCanvas();
-    updatePlayerPosition(keys);
     drawPlayer();
     requestAnimationFrame(gameLoop);
 }

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mobile Game with Random Enemies and Obstacles</title>
+    <title>Mobile Game with Long Obstacles</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
@@ -63,18 +63,36 @@
         // Enemies array
         const enemies = [];
 
-        // Initialize obstacles with random positions
+        // Initialize obstacles with a 4:1 length-to-width ratio
         function initObstacles() {
             obstacles.length = 0; // Clear any existing obstacles
             const numberOfObstacles = 6;
 
+            const MIN_LENGTH = 100; // Minimum length of the obstacle
+            const MAX_LENGTH = 200; // Maximum length of the obstacle
+            const MIN_WIDTH = 20;   // Minimum width of the obstacle
+            const MAX_WIDTH = 30;   // Maximum width of the obstacle
+
             for (let i = 0; i < numberOfObstacles; i++) {
                 const obstacle = {
-                    width: 50 + Math.random() * 150, // Width between 50 and 200
-                    height: 20 + Math.random() * 130, // Height between 20 and 150
+                    width: 0,
+                    height: 0,
                     x: 0,
                     y: 0
                 };
+
+                // Randomly decide if the obstacle is horizontal or vertical
+                const isHorizontal = Math.random() < 0.5;
+
+                if (isHorizontal) {
+                    // Horizontal obstacle (long width, short height)
+                    obstacle.width = MIN_LENGTH + Math.random() * (MAX_LENGTH - MIN_LENGTH);
+                    obstacle.height = MIN_WIDTH + Math.random() * (MAX_WIDTH - MIN_WIDTH);
+                } else {
+                    // Vertical obstacle (short width, long height)
+                    obstacle.width = MIN_WIDTH + Math.random() * (MAX_WIDTH - MIN_WIDTH);
+                    obstacle.height = MIN_LENGTH + Math.random() * (MAX_LENGTH - MIN_LENGTH);
+                }
 
                 let placed = false;
                 while (!placed) {

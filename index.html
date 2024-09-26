@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mobile Game with Obstacles and Enemies</title>
+    <title>Mobile Game with Random Enemies and More Obstacles</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
@@ -57,19 +57,41 @@
             dy: 0
         };
 
-        // Obstacles array
+        // Obstacles array with two additional obstacles
         const obstacles = [
             { x: 100, y: 100, width: 100, height: 20 },
             { x: 250, y: 200, width: 20, height: 150 },
             { x: 400, y: 50, width: 150, height: 20 },
-            { x: 600, y: 300, width: 20, height: 200 }
+            { x: 600, y: 300, width: 20, height: 200 },
+            { x: 200, y: 400, width: 200, height: 20 }, // New obstacle
+            { x: 500, y: 500, width: 20, height: 150 }  // New obstacle
         ];
 
-        // Enemies array
-        const enemies = [
-            { x: 150, y: 150, size: 20, dx: 1, dy: 1 },
-            { x: 500, y: 250, size: 20, dx: -1, dy: 1 }
-        ];
+        // Enemies array with 10 enemies spawning at random positions and directions
+        const enemies = [];
+
+        // Function to initialize enemies
+        function initEnemies() {
+            enemies.length = 0; // Clear any existing enemies
+            for (let i = 0; i < 10; i++) {
+                const enemySize = 20;
+                const enemy = {
+                    x: Math.random() * (canvas.width - enemySize),
+                    y: Math.random() * (canvas.height - enemySize),
+                    size: enemySize,
+                    dx: (Math.random() * 2 - 1) * 1.5, // Random speed between -1.5 and 1.5
+                    dy: (Math.random() * 2 - 1) * 1.5
+                };
+                // Ensure enemy doesn't spawn on top of the player or obstacles
+                if (!isCollidingWithObstacles(enemy.x, enemy.y, enemy.size) && !isCollidingWithPlayer(enemy)) {
+                    enemies.push(enemy);
+                } else {
+                    i--; // Retry if collision detected
+                }
+            }
+        }
+
+        initEnemies(); // Initialize enemies at the start
 
         // Function to draw the player
         function drawPlayer() {
@@ -119,12 +141,12 @@
             let newY = player.y + player.dy;
 
             // Check collision with obstacles
-            if (!isCollidingWithObstacles(newX, player.y)) {
+            if (!isCollidingWithObstacles(newX, player.y, player.size)) {
                 player.x = newX;
             } else {
                 player.dx = 0;
             }
-            if (!isCollidingWithObstacles(player.x, newY)) {
+            if (!isCollidingWithObstacles(player.x, newY, player.size)) {
                 player.y = newY;
             } else {
                 player.dy = 0;
@@ -155,12 +177,12 @@
                 }
 
                 // Check collision with obstacles
-                if (!isEnemyCollidingWithObstacles(newEnemyX, enemy.y, enemy)) {
+                if (!isCollidingWithObstacles(newEnemyX, enemy.y, enemy.size)) {
                     enemy.x = newEnemyX;
                 } else {
                     enemy.dx *= -1;
                 }
-                if (!isEnemyCollidingWithObstacles(enemy.x, newEnemyY, enemy)) {
+                if (!isCollidingWithObstacles(enemy.x, newEnemyY, enemy.size)) {
                     enemy.y = newEnemyY;
                 } else {
                     enemy.dy *= -1;
@@ -168,32 +190,37 @@
             });
         }
 
-        // Function to check collision between the player and obstacles
-        function isCollidingWithObstacles(x, y) {
-            const playerRect = {
+        // Function to check collision between the player/enemies and obstacles
+        function isCollidingWithObstacles(x, y, size) {
+            const rect = {
                 x: x,
                 y: y,
-                width: player.size,
-                height: player.size
+                width: size,
+                height: size
             };
 
             return obstacles.some(obstacle => {
-                return isColliding(playerRect, obstacle);
+                return isColliding(rect, obstacle);
             });
         }
 
-        // Function to check collision between an enemy and obstacles
-        function isEnemyCollidingWithObstacles(x, y, enemy) {
+        // Function to check collision between an enemy and the player
+        function isCollidingWithPlayer(enemy) {
             const enemyRect = {
-                x: x,
-                y: y,
+                x: enemy.x,
+                y: enemy.y,
                 width: enemy.size,
                 height: enemy.size
             };
 
-            return obstacles.some(obstacle => {
-                return isColliding(enemyRect, obstacle);
-            });
+            const playerRect = {
+                x: player.x,
+                y: player.y,
+                width: player.size,
+                height: player.size
+            };
+
+            return isColliding(enemyRect, playerRect);
         }
 
         // Function to check collision between two rectangles
@@ -243,11 +270,8 @@
             player.y = canvas.height / 2 - player.size / 2;
             player.dx = 0;
             player.dy = 0;
-            // Reset enemies to initial positions
-            enemies[0].x = 150;
-            enemies[0].y = 150;
-            enemies[1].x = 500;
-            enemies[1].y = 250;
+            // Re-initialize enemies
+            initEnemies();
         }
 
         // Virtual joystick setup using nippleJS

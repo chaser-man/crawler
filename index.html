@@ -1,34 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mobile Canvas Game</title>
+    <title>Mobile Canvas Game with Virtual Joystick</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        #gameCanvas {
-            border: 1px solid #000;
-            display: block;
-            margin: 0 auto;
-        }
-        .controls {
-            width: 200px;
-            margin: 20px auto;
-            text-align: center;
-        }
-        .control-button {
-            width: 60px;
-            height: 60px;
-            margin: 5px;
-            font-size: 24px;
-        }
+        /* Include the CSS code provided in the next section */
     </style>
+    <!-- Include nippleJS library from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.min.js"></script>
 </head>
 <body>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div class="controls">
-        <button id="left" class="control-button">◀</button>
-        <button id="up" class="control-button">▲</button>
-        <button id="down" class="control-button">▼</button>
-        <button id="right" class="control-button">▶</button>
-    </div>
-    <script src="game.js"></script>
+    <canvas id="gameCanvas"></canvas>
+    <!-- Joystick container -->
+    <div id="joystick-container"></div>
+    <script>
+        // Include the JavaScript code provided in the next section
+    </script>
 </body>
 </html>

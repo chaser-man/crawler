@@ -1,13 +1,20 @@
-
 body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-family: Arial, sans-serif;
-    background-color: #000;
-    color: #fff;
+    margin: 0;
+    overflow: hidden; /* Prevent scrolling */
+    touch-action: none; /* Prevent touch interactions from triggering browser actions */
 }
 
-canvas {
-    border: 1px solid #fff;
+#gameCanvas {
+    display: block;
+    margin: 0 auto;
+    background-color: #000; /* Canvas background color */
+}
+
+#joystick-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 150px;
+    height: 150px;
+    /* Adjust the size and position as needed */
 }

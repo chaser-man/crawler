@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spider and Bats Game (Shapes Version)</title>
+    <title>Spider and Bats Game (With Level Cleared Screen)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Reset default margin and prevent scrolling */
@@ -70,6 +70,8 @@
         let level = 1;
         let timeLeft = 10;
         let timerInterval;
+        let showingLevelCleared = false;
+        let levelClearedTimeout;
 
         // Start the game
         startLevel();
@@ -95,9 +97,20 @@
                 timeLeft--;
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    levelUp();
+                    levelCleared();
                 }
             }, 1000);
+        }
+
+        // Function to handle level cleared
+        function levelCleared() {
+            showingLevelCleared = true;
+
+            // Set a timeout to proceed to the next level after 2 seconds
+            levelClearedTimeout = setTimeout(() => {
+                showingLevelCleared = false;
+                levelUp();
+            }, 2000);
         }
 
         // Function to handle leveling up
@@ -205,18 +218,35 @@
         // Game loop
         function gameLoop() {
             clearCanvas();
-            updatePlayerPosition();
-            updateEnemies();
-            drawObstacles();
-            drawEnemies();
-            drawPlayer();
-            drawHUD();
+
+            if (showingLevelCleared) {
+                drawLevelClearedScreen();
+            } else {
+                updatePlayerPosition();
+                updateEnemies();
+                drawObstacles();
+                drawEnemies();
+                drawPlayer();
+                drawHUD();
+            }
+
             requestAnimationFrame(gameLoop);
         }
 
         // Function to clear the canvas
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Function to draw the "Level Cleared" screen
+        function drawLevelClearedScreen() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Semi-transparent overlay
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#FFFFFF'; // White color for text
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Level Cleared!', canvas.width / 2, canvas.height / 2);
         }
 
         // Function to draw the player (spider with legs and eyes)
@@ -496,12 +526,16 @@
         // Function to handle game over
         function gameOver() {
             clearInterval(timerInterval);
+            if (levelClearedTimeout) {
+                clearTimeout(levelClearedTimeout);
+            }
             alert('Game Over! You reached Level ' + level);
             resetGame();
         }
 
         function resetGame() {
             level = 1;
+            showingLevelCleared = false;
             startLevel();
         }
 

@@ -226,7 +226,7 @@
             const radius = player.size / 2;
 
             // Draw spider body
-            ctx.fillStyle = '#808080'; // Changed to gray color for the spider
+            ctx.fillStyle = '#808080'; // Gray color for the spider
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
             ctx.fill();
@@ -234,16 +234,36 @@
             // Draw spider legs
             ctx.strokeStyle = '#808080'; // Match legs to spider body color
             ctx.lineWidth = 2;
-            for (let i = 0; i < 8; i++) {
-                const angle = (Math.PI / 4) * i;
+
+            // Left side legs (4 legs)
+            for (let i = 0; i < 4; i++) {
+                const angle = Math.PI / 2 + (i - 1.5) * (Math.PI / 12); // Adjust angles for left side legs
                 const legLength = radius + 10;
                 const startX = centerX + Math.cos(angle) * radius;
                 const startY = centerY + Math.sin(angle) * radius;
+                const controlX = centerX + Math.cos(angle) * (radius + 5);
+                const controlY = centerY + Math.sin(angle) * (radius + 5);
                 const endX = centerX + Math.cos(angle) * legLength;
                 const endY = centerY + Math.sin(angle) * legLength;
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
-                ctx.lineTo(endX, endY);
+                ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+                ctx.stroke();
+            }
+
+            // Right side legs (4 legs)
+            for (let i = 0; i < 4; i++) {
+                const angle = -Math.PI / 2 + (i - 1.5) * (Math.PI / 12); // Adjust angles for right side legs
+                const legLength = radius + 10;
+                const startX = centerX + Math.cos(angle) * radius;
+                const startY = centerY + Math.sin(angle) * radius;
+                const controlX = centerX + Math.cos(angle) * (radius + 5);
+                const controlY = centerY + Math.sin(angle) * (radius + 5);
+                const endX = centerX + Math.cos(angle) * legLength;
+                const endY = centerY + Math.sin(angle) * legLength;
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.quadraticCurveTo(controlX, controlY, endX, endY);
                 ctx.stroke();
             }
 
@@ -265,7 +285,7 @@
             ctx.fill();
         }
 
-        // Function to draw enemies (improved bats with wings and eyes)
+        // Function to draw enemies (improved bats with larger wings and eyes)
         function drawEnemies() {
             enemies.forEach(enemy => {
                 const centerX = enemy.x + enemy.size / 2;
@@ -279,22 +299,25 @@
                 ctx.ellipse(centerX, centerY, bodyWidth / 2, bodyHeight / 2, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Draw bat wings
+                // Draw bat wings (larger)
                 ctx.fillStyle = '#8B4513'; // Match wing color to bat body
+
+                // Left wing
                 ctx.beginPath();
                 ctx.moveTo(centerX - bodyWidth / 2, centerY);
                 ctx.bezierCurveTo(
-                    centerX - bodyWidth * 1.5, centerY - bodyHeight,
-                    centerX - bodyWidth * 1.5, centerY + bodyHeight,
+                    centerX - bodyWidth * 2, centerY - bodyHeight * 1.5, // Control point 1
+                    centerX - bodyWidth * 2, centerY + bodyHeight * 1.5, // Control point 2
                     centerX - bodyWidth / 2, centerY
                 );
                 ctx.fill();
 
+                // Right wing
                 ctx.beginPath();
                 ctx.moveTo(centerX + bodyWidth / 2, centerY);
                 ctx.bezierCurveTo(
-                    centerX + bodyWidth * 1.5, centerY - bodyHeight,
-                    centerX + bodyWidth * 1.5, centerY + bodyHeight,
+                    centerX + bodyWidth * 2, centerY - bodyHeight * 1.5, // Control point 1
+                    centerX + bodyWidth * 2, centerY + bodyHeight * 1.5, // Control point 2
                     centerX + bodyWidth / 2, centerY
                 );
                 ctx.fill();

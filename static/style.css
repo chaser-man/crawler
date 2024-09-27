@@ -13,8 +13,9 @@ body {
 #joystick-container {
     position: absolute;
     bottom: 20px;
-    right: 20px; /* Joystick on the right side */
+    right: 20px; /* Joystick container anchored to the right side */
     width: 150px;
     height: 150px;
 }
+
 

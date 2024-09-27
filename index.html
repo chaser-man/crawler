@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spider and Bats Game (Purple Gate Version)</title>
+    <title>Spider and Bats Game (Circular Gate with Shadow)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Reset default margin and prevent scrolling */
@@ -23,7 +23,7 @@
         #joystick-container {
             position: absolute;
             bottom: 20px;
-            right: 20px; /* Joystick on the right side */
+            left: 20px; /* Joystick on the left side */
             width: 150px;
             height: 150px;
         }
@@ -55,17 +55,16 @@
             x: 0,
             y: 0,
             size: 30,
-            speed: 3.5, // Speed set to 4
+            speed: 3.5, // Player speed set to 4
             dx: 0,
             dy: 0
         };
 
-        // Gate object
+        // Gate object (circular)
         const gate = {
             x: 0,
             y: 0,
-            width: 50,
-            height: 20
+            radius: 25 // Adjust the size as needed
         };
 
         // Obstacles array
@@ -92,8 +91,8 @@
             player.dy = 0;
 
             // Place the gate at a random position along the top of the screen
-            gate.x = Math.random() * (canvas.width - gate.width);
-            gate.y = 10; // Slight offset from the top edge
+            gate.x = Math.random() * (canvas.width - gate.radius * 2) + gate.radius;
+            gate.y = gate.radius + 10; // Slight offset from the top edge
 
             initObstacles();
             initEnemies(3 + (level - 1)); // Start with 3 enemies and add one per level
@@ -156,7 +155,7 @@
                             width: player.size,
                             height: player.size
                         }) &&
-                        !isCollidingWithGate(obstacle) &&
+                        !isRectCircleColliding(obstacle, gate) &&
                         !obstacles.some(existingObstacle => isColliding(obstacle, existingObstacle))
                     ) {
                         placed = true;
@@ -218,7 +217,7 @@
                 updateEnemies();
                 drawObstacles();
                 drawEnemies();
-                drawGate(); // Draw the gate
+                drawGate(); // Draw the gate (circular with shadow)
                 drawPlayer();
                 drawHUD();
             }
@@ -242,23 +241,24 @@
             ctx.fillText('Level Cleared!', canvas.width / 2, canvas.height / 2);
         }
 
-        // Function to draw the gate (purple circle with a more visible, blurry, centered shadow)
+        // Function to draw the gate (circular with purple shadow)
         function drawGate() {
             ctx.save(); // Save the current state
 
             // Set shadow properties
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; // Semi-transparent black shadow
-            ctx.shadowBlur = 10; // Amount of blur
-            ctx.shadowOffsetX = 0; // Shadow directly below
-            ctx.shadowOffsetY = 5; // Vertical offset for the shadow
+            ctx.shadowColor = 'rgba(128, 0, 128, 0.5)'; // Semi-transparent purple shadow
+            ctx.shadowBlur = 20; // Amount of blur
+            ctx.shadowOffsetX = 0; // Centered shadow
+            ctx.shadowOffsetY = 0; // Centered shadow
 
-            // Draw gate (purple rectangle)
+            // Draw gate (purple circle)
+            ctx.beginPath();
+            ctx.arc(gate.x, gate.y, gate.radius, 0, Math.PI * 2);
             ctx.fillStyle = '#800080'; // Purple color for the gate
-            ctx.fillRect(gate.x, gate.y, gate.width, gate.height);
+            ctx.fill();
 
             ctx.restore(); // Restore the previous state
         }
-
 
         // Function to draw the player (spider with legs and eyes)
         function drawPlayer() {
@@ -502,23 +502,6 @@
             return isColliding(enemyRect, playerRect);
         }
 
-        // Function to check collision between an object and the gate
-        function isCollidingWithGate(obj) {
-            const gateCenterX = gate.x + gate.size / 2;
-            const gateCenterY = gate.y;
-            const gateRadius = gate.size / 2;
-
-            const objCenterX = obj.x + (obj.width || obj.size) / 2;
-            const objCenterY = obj.y + (obj.height || obj.size) / 2;
-            const objRadius = (obj.width || obj.size) / 2;
-
-            const dx = gateCenterX - objCenterX;
-            const dy = gateCenterY - objCenterY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            return distance < gateRadius + objRadius;
-        }
-
         // Function to check collision between two rectangles
         function isColliding(rect1, rect2) {
             return (
@@ -527,6 +510,31 @@
                 rect1.y < rect2.y + rect2.height &&
                 rect1.y + rect1.height > rect2.y
             );
+        }
+
+        // Function to check collision between two circles
+        function isCircleColliding(circle1, circle2) {
+            const dx = circle1.x - circle2.x;
+            const dy = circle1.y - circle2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            return distance < circle1.radius + circle2.radius;
+        }
+
+        // Function to check collision between a rectangle and a circle
+        function isRectCircleColliding(rect, circle) {
+            const distX = Math.abs(circle.x - rect.x - rect.width / 2);
+            const distY = Math.abs(circle.y - rect.y - rect.height / 2);
+
+            if (distX > (rect.width / 2 + circle.radius)) { return false; }
+            if (distY > (rect.height / 2 + circle.radius)) { return false; }
+
+            if (distX <= (rect.width / 2)) { return true; }
+            if (distY <= (rect.height / 2)) { return true; }
+
+            const dx = distX - rect.width / 2;
+            const dy = distY - rect.height / 2;
+            return (dx * dx + dy * dy <= (circle.radius * circle.radius));
         }
 
         // Function to check collision with enemies
@@ -554,15 +562,38 @@
 
         // Function to check if player reached the gate
         function checkCollisionWithGate() {
-            const playerRect = {
-                x: player.x,
-                y: player.y,
-                size: player.size
+            const playerCircle = {
+                x: player.x + player.size / 2,
+                y: player.y + player.size / 2,
+                radius: player.size / 2
             };
 
-            if (isCollidingWithGate(playerRect)) {
+            const gateCircle = {
+                x: gate.x,
+                y: gate.y,
+                radius: gate.radius
+            };
+
+            if (isCircleColliding(playerCircle, gateCircle)) {
                 levelCleared();
             }
+        }
+
+        // Function to check if enemy is colliding with the gate
+        function isCollidingWithGate(enemy) {
+            const enemyCircle = {
+                x: enemy.x + enemy.size / 2,
+                y: enemy.y + enemy.size / 2,
+                radius: enemy.size / 2
+            };
+
+            const gateCircle = {
+                x: gate.x,
+                y: gate.y,
+                radius: gate.radius
+            };
+
+            return isCircleColliding(enemyCircle, gateCircle);
         }
 
         // Function to handle game over
@@ -584,7 +615,7 @@
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),
             mode: 'static',
-            position: { right: '75px', bottom: '75px' }, // Joystick on the right side
+            position: { right: '75px', bottom: '75px' }, // Joystick on the left side
             color: 'white',
             size: 100
         };

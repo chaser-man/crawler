@@ -23,7 +23,7 @@
         #joystick-container {
             position: absolute;
             bottom: 20px;
-            left: 20px; /* Moved to the left side */
+            left: 20px; /* Joystick on the left side */
             width: 150px;
             height: 150px;
         }
@@ -119,7 +119,7 @@
         // Initialize obstacles with random positions and sizes
         function initObstacles() {
             obstacles.length = 0; // Clear any existing obstacles
-            const numberOfObstacles = 6; // Increased to 6 obstacles
+            const numberOfObstacles = 6; // Six obstacles as per your request
 
             const MIN_LENGTH = 100;
             const MAX_LENGTH = 200;
@@ -244,7 +244,7 @@
 
         // Function to draw the gate
         function drawGate() {
-            ctx.fillStyle = '#FFD700'; // Gold color for the gate
+            ctx.fillStyle = '#800080'; // Purple color for the gate
             ctx.fillRect(gate.x, gate.y, gate.width, gate.height);
         }
 
@@ -556,7 +556,7 @@
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),
             mode: 'static',
-            position: { left: '75px', bottom: '75px' }, // Moved joystick to the left side
+            position: { right: '75px', bottom: '75px' }, // Joystick on the left side
             color: 'white',
             size: 100
         };

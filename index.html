@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spider and Bats Game (Glowing Portal Version)</title>
+    <title>Spider and Bats Game (Gate Version with Updates)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Reset default margin and prevent scrolling */
@@ -12,18 +12,10 @@
             background-color: #000; /* Black background */
         }
 
-        /* Game container to hold canvas and joystick */
-        #gameContainer {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #000;
-        }
-
         /* Center the canvas */
         #gameCanvas {
             display: block;
+            margin: 0 auto;
             background-color: #000; /* Canvas background color */
         }
 
@@ -31,7 +23,7 @@
         #joystick-container {
             position: absolute;
             bottom: 20px;
-            left: 20px;
+            left: 20px; /* Moved to the left side */
             width: 150px;
             height: 150px;
         }
@@ -40,31 +32,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.min.js"></script>
 </head>
 <body>
-    <!-- Game container -->
-    <div id="gameContainer">
-        <!-- Game canvas -->
-        <canvas id="gameCanvas"></canvas>
-        <!-- Joystick container -->
-        <div id="joystick-container"></div>
-    </div>
+    <!-- Game canvas -->
+    <canvas id="gameCanvas"></canvas>
+    <!-- Joystick container -->
+    <div id="joystick-container"></div>
     <script>
         // Get the canvas and context
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Set maximum canvas dimensions corresponding to a phone screen
-        const maxWidth = 375; // Maximum width (e.g., iPhone 6/7/8 width)
-        const maxHeight = 667; // Maximum height (e.g., iPhone 6/7/8 height)
-
-        // Resize canvas to fit the window, but limit to max dimensions
+        // Resize canvas to fit the window
         function resizeCanvas() {
-            canvas.width = Math.min(window.innerWidth, maxWidth);
-            canvas.height = Math.min(window.innerHeight, maxHeight);
-
-            // Adjust game container size
-            const gameContainer = document.getElementById('gameContainer');
-            gameContainer.style.width = canvas.width + 'px';
-            gameContainer.style.height = canvas.height + 'px';
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
 
         resizeCanvas();
@@ -80,11 +60,12 @@
             dy: 0
         };
 
-        // Portal object
-        const portal = {
+        // Gate object
+        const gate = {
             x: 0,
             y: 0,
-            radius: 40
+            width: 50,
+            height: 20
         };
 
         // Obstacles array
@@ -104,17 +85,15 @@
 
         // Function to start a level
         function startLevel() {
-            resizeCanvas(); // Ensure canvas is resized at the start of each level
-
             // Place the player at a random position along the bottom of the screen
             player.x = Math.random() * (canvas.width - player.size);
             player.y = canvas.height - player.size - 10; // Slight offset from the bottom edge
             player.dx = 0;
             player.dy = 0;
 
-            // Place the portal at a random position along the top of the screen
-            portal.x = Math.random() * (canvas.width - portal.radius * 2) + portal.radius;
-            portal.y = portal.radius + 10; // Slight offset from the top edge
+            // Place the gate at a random position along the top of the screen
+            gate.x = Math.random() * (canvas.width - gate.width);
+            gate.y = 10; // Slight offset from the top edge
 
             initObstacles();
             initEnemies(3 + (level - 1)); // Start with 3 enemies and add one per level
@@ -140,7 +119,7 @@
         // Initialize obstacles with random positions and sizes
         function initObstacles() {
             obstacles.length = 0; // Clear any existing obstacles
-            const numberOfObstacles = 8; // Increased to 8 obstacles
+            const numberOfObstacles = 6; // Increased to 6 obstacles
 
             const MIN_LENGTH = 100;
             const MAX_LENGTH = 200;
@@ -177,7 +156,7 @@
                             width: player.size,
                             height: player.size
                         }) &&
-                        !isCollidingWithPortal(obstacle) &&
+                        !isColliding(obstacle, gate) &&
                         !obstacles.some(existingObstacle => isColliding(obstacle, existingObstacle))
                     ) {
                         placed = true;
@@ -217,7 +196,7 @@
                     if (
                         !isCollidingWithObstacles(enemy.x, enemy.y, enemy.size) &&
                         !isCollidingWithPlayer(enemy) &&
-                        !isCollidingWithPortal(enemy) &&
+                        !isColliding(enemy, gate) &&
                         !enemies.some(existingEnemy => isColliding(enemy, existingEnemy))
                     ) {
                         placed = true;
@@ -239,7 +218,7 @@
                 updateEnemies();
                 drawObstacles();
                 drawEnemies();
-                drawPortal();
+                drawGate();
                 drawPlayer();
                 drawHUD();
             }
@@ -263,32 +242,10 @@
             ctx.fillText('Level Cleared!', canvas.width / 2, canvas.height / 2);
         }
 
-        // Function to draw the glowing purple portal
-        function drawPortal() {
-            const centerX = portal.x;
-            const centerY = portal.y;
-            const outerRadius = portal.radius;
-            const innerRadius = portal.radius * 0.7;
-
-            // Create radial gradient for the glow effect
-            const gradient = ctx.createRadialGradient(
-                centerX, centerY, innerRadius,
-                centerX, centerY, outerRadius
-            );
-            gradient.addColorStop(0, 'rgba(128, 0, 128, 1)'); // Solid purple at the center
-            gradient.addColorStop(1, 'rgba(128, 0, 128, 0)'); // Transparent at the edges
-
-            // Draw the outer glow
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Draw the inner portal circle
-            ctx.fillStyle = 'rgba(75, 0, 130, 1)'; // Indigo color for the portal center
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
-            ctx.fill();
+        // Function to draw the gate
+        function drawGate() {
+            ctx.fillStyle = '#FFD700'; // Gold color for the gate
+            ctx.fillRect(gate.x, gate.y, gate.width, gate.height);
         }
 
         // Function to draw the player (spider with legs and eyes)
@@ -357,7 +314,7 @@
             ctx.fill();
         }
 
-        // Function to draw enemies (improved bats with larger wings and eyes)
+        // Function to draw enemies (improved bats with red eyes)
         function drawEnemies() {
             enemies.forEach(enemy => {
                 const centerX = enemy.x + enemy.size / 2;
@@ -418,8 +375,8 @@
                 ctx.arc(centerX + eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Draw pupils
-                ctx.fillStyle = '#000000'; // Black color for the pupils
+                // Draw pupils (red)
+                ctx.fillStyle = '#FF0000'; // Red color for the pupils
                 ctx.beginPath();
                 ctx.arc(centerX - eyeOffsetX, centerY - eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
                 ctx.arc(centerX + eyeOffsetX, centerY - eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
@@ -468,8 +425,8 @@
             // Check collision with enemies
             checkCollisionWithEnemies();
 
-            // Check if player reached the portal
-            checkCollisionWithPortal(player);
+            // Check if player reached the gate
+            checkCollisionWithGate();
         }
 
         // Function to update enemies
@@ -566,61 +523,18 @@
             });
         }
 
-        // Function to check if player reached the portal
-        function checkCollisionWithPortal(entity) {
-            const dx = (entity.x + entity.size / 2) - portal.x;
-            const dy = (entity.y + entity.size / 2) - portal.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance < portal.radius + entity.size / 2) {
-                if (entity === player) {
-                    levelCleared();
-                } else {
-                    // For enemies, do nothing
-                }
-            }
-        }
-
-        // Function to check collision with portal (for obstacles and enemies)
-        function isCollidingWithPortal(entity) {
-            const rect = {
-                x: entity.x,
-                y: entity.y,
-                width: entity.width || entity.size,
-                height: entity.height || entity.size
+        // Function to check if player reached the gate
+        function checkCollisionWithGate() {
+            const playerRect = {
+                x: player.x,
+                y: player.y,
+                width: player.size,
+                height: player.size
             };
 
-            const circle = {
-                x: portal.x,
-                y: portal.y,
-                radius: portal.radius
-            };
-
-            return rectCircleColliding(rect, circle);
-        }
-
-        // Function to check collision between rectangle and circle
-        function rectCircleColliding(rect, circle) {
-            const distX = Math.abs(circle.x - rect.x - rect.width / 2);
-            const distY = Math.abs(circle.y - rect.y - rect.height / 2);
-
-            if (distX > (rect.width / 2 + circle.radius)) {
-                return false;
+            if (isColliding(playerRect, gate)) {
+                levelCleared();
             }
-            if (distY > (rect.height / 2 + circle.radius)) {
-                return false;
-            }
-
-            if (distX <= (rect.width / 2)) {
-                return true;
-            }
-            if (distY <= (rect.height / 2)) {
-                return true;
-            }
-
-            const dx = distX - rect.width / 2;
-            const dy = distY - rect.height / 2;
-            return (dx * dx + dy * dy <= (circle.radius * circle.radius));
         }
 
         // Function to handle game over
@@ -642,7 +556,7 @@
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),
             mode: 'static',
-            position: { left: '75px', bottom: '75px' },
+            position: { left: '75px', bottom: '75px' }, // Moved joystick to the left side
             color: 'white',
             size: 100
         };

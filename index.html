@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mobile Game with Progressive Levels</title>
+    <title>Mobile Game with Spider Player and Bat Enemies</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
@@ -47,11 +47,18 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
+        // Load images
+        const playerImg = new Image();
+        playerImg.src = 'images/player_spider.png'; // Path to your spider image
+
+        const enemyImg = new Image();
+        enemyImg.src = 'images/enemy_bat.png'; // Path to your bat image
+
         // Player object
         const player = {
-            x: canvas.width / 2 - 10,
-            y: canvas.height / 2 - 10,
-            size: 20,
+            x: canvas.width / 2 - 20,
+            y: canvas.height / 2 - 20,
+            size: 40, // Adjusted size to better display the image
             speed: 2, // Adjust speed as needed
             dx: 0,
             dy: 0
@@ -131,7 +138,7 @@
             const halfEnemies = Math.floor(numEnemies / 2);
 
             for (let i = 0; i < numEnemies; i++) {
-                const enemySize = 20;
+                const enemySize = 40; // Adjusted size to better display the image
                 const enemy = {
                     x: 0,
                     y: 0,
@@ -209,8 +216,7 @@
 
         // Function to draw the player
         function drawPlayer() {
-            ctx.fillStyle = '#ff6600';
-            ctx.fillRect(player.x, player.y, player.size, player.size);
+            ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
         }
 
         // Function to draw obstacles
@@ -223,9 +229,8 @@
 
         // Function to draw enemies
         function drawEnemies() {
-            ctx.fillStyle = '#ff0000'; // Red color
             enemies.forEach(enemy => {
-                ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+                ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.size, enemy.size);
             });
         }
 

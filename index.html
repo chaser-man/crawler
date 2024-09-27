@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spider and Bats Game (Portal Version)</title>
+    <title>Spider and Bats Game (Purple Gate Version)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Reset default margin and prevent scrolling */
@@ -23,7 +23,7 @@
         #joystick-container {
             position: absolute;
             bottom: 20px;
-            right: 20px; /* Moved joystick to the right side */
+            right: 20px; /* Joystick on the right side */
             width: 150px;
             height: 150px;
         }
@@ -55,16 +55,16 @@
             x: 0,
             y: 0,
             size: 30,
-            speed: 4, // Updated speed to 4
+            speed: 4, // Speed set to 4
             dx: 0,
             dy: 0
         };
 
-        // Gate (Portal) object
+        // Gate object
         const gate = {
             x: 0,
             y: 0,
-            size: 40 // Adjusted size for the portal
+            size: 40 // Size of the gate circle
         };
 
         // Obstacles array
@@ -90,7 +90,7 @@
             player.dx = 0;
             player.dy = 0;
 
-            // Place the gate (portal) at a random position along the top of the screen
+            // Place the gate at a random position along the top of the screen
             gate.x = Math.random() * (canvas.width - gate.size);
             gate.y = 10 + gate.size / 2; // Slight offset from the top edge
 
@@ -155,7 +155,7 @@
                             width: player.size,
                             height: player.size
                         }) &&
-                        !isCollidingWithPortal(obstacle) &&
+                        !isCollidingWithGate(obstacle) &&
                         !obstacles.some(existingObstacle => isColliding(obstacle, existingObstacle))
                     ) {
                         placed = true;
@@ -195,7 +195,7 @@
                     if (
                         !isCollidingWithObstacles(enemy.x, enemy.y, enemy.size) &&
                         !isCollidingWithPlayer(enemy) &&
-                        !isCollidingWithPortal(enemy) &&
+                        !isCollidingWithGate(enemy) &&
                         !enemies.some(existingEnemy => isColliding(enemy, existingEnemy))
                     ) {
                         placed = true;
@@ -217,7 +217,7 @@
                 updateEnemies();
                 drawObstacles();
                 drawEnemies();
-                drawPortal(); // Draw the portal instead of gate
+                drawGate(); // Draw the gate
                 drawPlayer();
                 drawHUD();
             }
@@ -241,32 +241,22 @@
             ctx.fillText('Level Cleared!', canvas.width / 2, canvas.height / 2);
         }
 
-        // Function to draw the portal
-        function drawPortal() {
+        // Function to draw the gate (purple circle with shadow)
+        function drawGate() {
             const centerX = gate.x + gate.size / 2;
             const centerY = gate.y;
 
-            // Draw outer circle
-            const gradient = ctx.createRadialGradient(centerX, centerY, gate.size / 4, centerX, centerY, gate.size / 2);
-            gradient.addColorStop(0, 'rgba(128, 0, 128, 0.5)');
-            gradient.addColorStop(1, 'rgba(128, 0, 128, 0)');
-            ctx.fillStyle = gradient;
+            // Draw shadow
             ctx.beginPath();
-            ctx.arc(centerX, centerY, gate.size / 2, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY + 5, gate.size / 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(128, 0, 128, 0.5)'; // Semi-transparent purple shadow
             ctx.fill();
 
-            // Draw inner swirl (simple spiral effect)
-            ctx.strokeStyle = '#800080'; // Purple color
-            ctx.lineWidth = 2;
+            // Draw gate (purple circle)
             ctx.beginPath();
-            for (let i = 0; i < 10; i++) {
-                const angle = i * (Math.PI / 5);
-                const radius = (gate.size / 2) * (i / 10);
-                const x = centerX + radius * Math.cos(angle);
-                const y = centerY + radius * Math.sin(angle);
-                ctx.lineTo(x, y);
-            }
-            ctx.stroke();
+            ctx.arc(centerX, centerY, gate.size / 2, 0, Math.PI * 2);
+            ctx.fillStyle = '#800080'; // Solid purple color
+            ctx.fill();
         }
 
         // Function to draw the player (spider with legs and eyes)
@@ -446,8 +436,8 @@
             // Check collision with enemies
             checkCollisionWithEnemies();
 
-            // Check if player reached the portal
-            checkCollisionWithPortal();
+            // Check if player reached the gate
+            checkCollisionWithGate();
         }
 
         // Function to update enemies
@@ -511,21 +501,21 @@
             return isColliding(enemyRect, playerRect);
         }
 
-        // Function to check collision between an object and the portal
-        function isCollidingWithPortal(obj) {
-            const portalCenterX = gate.x + gate.size / 2;
-            const portalCenterY = gate.y;
-            const portalRadius = gate.size / 2;
+        // Function to check collision between an object and the gate
+        function isCollidingWithGate(obj) {
+            const gateCenterX = gate.x + gate.size / 2;
+            const gateCenterY = gate.y;
+            const gateRadius = gate.size / 2;
 
             const objCenterX = obj.x + (obj.width || obj.size) / 2;
             const objCenterY = obj.y + (obj.height || obj.size) / 2;
             const objRadius = (obj.width || obj.size) / 2;
 
-            const dx = portalCenterX - objCenterX;
-            const dy = portalCenterY - objCenterY;
+            const dx = gateCenterX - objCenterX;
+            const dy = gateCenterY - objCenterY;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            return distance < portalRadius + objRadius;
+            return distance < gateRadius + objRadius;
         }
 
         // Function to check collision between two rectangles
@@ -561,15 +551,15 @@
             });
         }
 
-        // Function to check if player reached the portal
-        function checkCollisionWithPortal() {
+        // Function to check if player reached the gate
+        function checkCollisionWithGate() {
             const playerRect = {
                 x: player.x,
                 y: player.y,
                 size: player.size
             };
 
-            if (isCollidingWithPortal(playerRect)) {
+            if (isCollidingWithGate(playerRect)) {
                 levelCleared();
             }
         }
@@ -593,7 +583,7 @@
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),
             mode: 'static',
-            position: { right: '75px', bottom: '75px' }, // Moved joystick to the right side
+            position: { right: '75px', bottom: '75px' }, // Joystick on the right side
             color: 'white',
             size: 100
         };

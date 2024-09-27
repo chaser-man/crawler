@@ -49,9 +49,25 @@
 
         // Load images
         const playerImg = new Image();
-        playerImg.src = 'images/player_spider.png'; // Path to your spider image
-
         const enemyImg = new Image();
+
+        let imagesLoaded = 0;
+
+        playerImg.onload = function() {
+            imagesLoaded++;
+            if (imagesLoaded === 2) {
+                startGame();
+            }
+        };
+
+        enemyImg.onload = function() {
+            imagesLoaded++;
+            if (imagesLoaded === 2) {
+                startGame();
+            }
+        };
+
+        playerImg.src = 'images/player_spider.png'; // Path to your spider image
         enemyImg.src = 'images/enemy_bat.png'; // Path to your bat image
 
         // Player object
@@ -74,6 +90,12 @@
         let level = 1;
         let timeLeft = 10;
         let timerInterval;
+
+        // Start the game after images are loaded
+        function startGame() {
+            startLevel();
+            gameLoop();
+        }
 
         // Initialize obstacles with a 4:1 length-to-width ratio
         function initObstacles() {
@@ -180,9 +202,6 @@
             }
         }
 
-        // Start the game
-        startLevel();
-
         // Function to start a level
         function startLevel() {
             // Reset player position
@@ -261,8 +280,6 @@
             drawHUD();
             requestAnimationFrame(gameLoop);
         }
-
-        gameLoop();
 
         // Update player position
         function updatePlayerPosition() {

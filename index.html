@@ -64,7 +64,8 @@
         const gate = {
             x: 0,
             y: 0,
-            size: 40 // Size of the gate circle
+            width: 50,
+            height: 20
         };
 
         // Obstacles array
@@ -91,8 +92,8 @@
             player.dy = 0;
 
             // Place the gate at a random position along the top of the screen
-            gate.x = Math.random() * (canvas.width - gate.size);
-            gate.y = 10 + gate.size / 2; // Slight offset from the top edge
+            gate.x = Math.random() * (canvas.width - gate.width);
+            gate.y = 10; // Slight offset from the top edge
 
             initObstacles();
             initEnemies(3 + (level - 1)); // Start with 3 enemies and add one per level

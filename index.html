@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mobile Game with Scoring</title>
+    <title>Mobile Game with Progressive Levels</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
@@ -63,9 +63,10 @@
         // Enemies array
         const enemies = [];
 
-        // Score
-        let score = 0;
-        let scoreInterval;
+        // Game variables
+        let level = 1;
+        let timeLeft = 10;
+        let timerInterval;
 
         // Initialize obstacles with a 4:1 length-to-width ratio
         function initObstacles() {
@@ -122,13 +123,12 @@
         }
 
         // Initialize enemies with random positions and speeds
-        function initEnemies() {
+        function initEnemies(numEnemies) {
             enemies.length = 0; // Clear any existing enemies
-            const numberOfEnemies = 10;
             const minEnemySpeed = 0.75; // Half of previous speed
             const maxEnemySpeed = 3;    // Double of previous speed
 
-            for (let i = 0; i < numberOfEnemies; i++) {
+            for (let i = 0; i < numEnemies; i++) {
                 const enemySize = 20;
                 const enemy = {
                     x: 0,
@@ -163,8 +163,39 @@
             }
         }
 
-        initObstacles(); // Initialize obstacles at the start
-        initEnemies();   // Initialize enemies at the start
+        // Start the game
+        startLevel();
+
+        // Function to start a level
+        function startLevel() {
+            // Reset player position
+            player.x = canvas.width / 2 - player.size / 2;
+            player.y = canvas.height / 2 - player.size / 2;
+            player.dx = 0;
+            player.dy = 0;
+
+            timeLeft = 10; // Reset timer
+            initObstacles();
+            initEnemies(5 + (level - 1)); // Start with 5 enemies and add one per level
+
+            // Start the countdown timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    levelUp();
+                }
+            }, 1000);
+        }
+
+        // Function to handle leveling up
+        function levelUp() {
+            level++;
+            startLevel();
+        }
 
         // Function to draw the player
         function drawPlayer() {
@@ -188,12 +219,14 @@
             });
         }
 
-        // Function to draw score
-        function drawScore() {
+        // Function to draw HUD (Level and Timer)
+        function drawHUD() {
             ctx.fillStyle = '#ffffff'; // White color
             ctx.font = '24px Arial';
             ctx.textAlign = 'left';
-            ctx.fillText('Score: ' + score, 10, 30);
+            ctx.fillText('Level: ' + level, 10, 30);
+            ctx.textAlign = 'right';
+            ctx.fillText('Time Left: ' + timeLeft, canvas.width - 10, 30);
         }
 
         // Function to clear the canvas (fill it with black)
@@ -210,24 +243,11 @@
             drawObstacles();
             drawEnemies();
             drawPlayer();
-            drawScore();
+            drawHUD();
             requestAnimationFrame(gameLoop);
         }
 
         gameLoop();
-
-        // Start the score timer
-        function startScoreTimer() {
-            score = 0; // Reset score
-            if (scoreInterval) {
-                clearInterval(scoreInterval);
-            }
-            scoreInterval = setInterval(() => {
-                score++;
-            }, 1000);
-        }
-
-        startScoreTimer();
 
         // Update player position
         function updatePlayerPosition() {
@@ -356,22 +376,15 @@
 
         // Function to handle game over
         function gameOver() {
-            alert('Game Over! Your score was: ' + score);
+            clearInterval(timerInterval);
+            alert('Game Over! You reached Level ' + level);
             // Reset game
             resetGame();
         }
 
         function resetGame() {
-            // Reset player position
-            player.x = canvas.width / 2 - player.size / 2;
-            player.y = canvas.height / 2 - player.size / 2;
-            player.dx = 0;
-            player.dy = 0;
-            // Re-initialize obstacles and enemies
-            initObstacles();
-            initEnemies();
-            // Reset score timer
-            startScoreTimer();
+            level = 1;
+            startLevel();
         }
 
         // Virtual joystick setup using nippleJS

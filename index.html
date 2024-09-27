@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spider and Bats Game (With Level Cleared Screen)</title>
+    <title>Spider and Bats Game (Gate Version)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Reset default margin and prevent scrolling */
@@ -52,12 +52,20 @@
 
         // Player object
         const player = {
-            x: canvas.width / 2 - 15,
-            y: canvas.height / 2 - 15,
-            size: 30, // Adjusted size for better visibility
-            speed: 3.5, // Increased speed from 2 to 3
+            x: 0,
+            y: 0,
+            size: 30,
+            speed: 3.5, // Adjusted speed
             dx: 0,
             dy: 0
+        };
+
+        // Gate object
+        const gate = {
+            x: 0,
+            y: 0,
+            width: 50,
+            height: 20
         };
 
         // Obstacles array
@@ -68,8 +76,6 @@
 
         // Game variables
         let level = 1;
-        let timeLeft = 10;
-        let timerInterval;
         let showingLevelCleared = false;
         let levelClearedTimeout;
 
@@ -79,29 +85,18 @@
 
         // Function to start a level
         function startLevel() {
-            // Reset player position
-            player.x = canvas.width / 2 - player.size / 2;
-            player.y = canvas.height / 2 - player.size / 2;
+            // Place the player at a random position along the bottom of the screen
+            player.x = Math.random() * (canvas.width - player.size);
+            player.y = canvas.height - player.size - 10; // Slight offset from the bottom edge
             player.dx = 0;
             player.dy = 0;
 
-            timeLeft = 10; // Reset timer
+            // Place the gate at a random position along the top of the screen
+            gate.x = Math.random() * (canvas.width - gate.width);
+            gate.y = 10; // Slight offset from the top edge
+
             initObstacles();
             initEnemies(3 + (level - 1)); // Start with 3 enemies and add one per level
-
-            // Start the countdown timer
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-            timerInterval = setInterval(() => {
-                if (!showingLevelCleared) {
-                    timeLeft--;
-                    if (timeLeft <= 0) {
-                        clearInterval(timerInterval);
-                        levelCleared();
-                    }
-                }
-            }, 1000);
         }
 
         // Function to handle level cleared
@@ -161,6 +156,7 @@
                             width: player.size,
                             height: player.size
                         }) &&
+                        !isColliding(obstacle, gate) &&
                         !obstacles.some(existingObstacle => isColliding(obstacle, existingObstacle))
                     ) {
                         placed = true;
@@ -177,8 +173,6 @@
             const minEnemySpeed = 0.75;
             const maxEnemySpeed = 3;
 
-            const halfEnemies = Math.floor(numEnemies / 2);
-
             for (let i = 0; i < numEnemies; i++) {
                 const enemySize = 30; // Adjusted size for better visibility
                 const enemy = {
@@ -192,12 +186,7 @@
                 let placed = false;
                 while (!placed) {
                     enemy.x = Math.random() * (canvas.width - enemy.size);
-
-                    if (i < halfEnemies) {
-                        enemy.y = Math.random() * (canvas.height * 0.25 - enemy.size);
-                    } else {
-                        enemy.y = canvas.height * 0.75 + Math.random() * (canvas.height * 0.25 - enemy.size);
-                    }
+                    enemy.y = Math.random() * ((canvas.height / 2) - enemy.size); // Top half of the screen
 
                     const speed = minEnemySpeed + Math.random() * (maxEnemySpeed - minEnemySpeed);
                     const angle = Math.random() * 2 * Math.PI;
@@ -207,6 +196,7 @@
                     if (
                         !isCollidingWithObstacles(enemy.x, enemy.y, enemy.size) &&
                         !isCollidingWithPlayer(enemy) &&
+                        !isColliding(enemy, gate) &&
                         !enemies.some(existingEnemy => isColliding(enemy, existingEnemy))
                     ) {
                         placed = true;
@@ -228,6 +218,7 @@
                 updateEnemies();
                 drawObstacles();
                 drawEnemies();
+                drawGate();
                 drawPlayer();
                 drawHUD();
             }
@@ -249,6 +240,12 @@
             ctx.font = '48px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('Level Cleared!', canvas.width / 2, canvas.height / 2);
+        }
+
+        // Function to draw the gate
+        function drawGate() {
+            ctx.fillStyle = '#FFD700'; // Gold color for the gate
+            ctx.fillRect(gate.x, gate.y, gate.width, gate.height);
         }
 
         // Function to draw the player (spider with legs and eyes)
@@ -395,14 +392,12 @@
             });
         }
 
-        // Function to draw HUD (Level and Timer)
+        // Function to draw HUD (Level)
         function drawHUD() {
             ctx.fillStyle = '#ffffff'; // White color
             ctx.font = '24px Arial';
             ctx.textAlign = 'left';
             ctx.fillText('Level: ' + level, 10, 30);
-            ctx.textAlign = 'right';
-            ctx.fillText('Time Left: ' + timeLeft, canvas.width - 10, 30);
         }
 
         // Update player position
@@ -429,6 +424,9 @@
 
             // Check collision with enemies
             checkCollisionWithEnemies();
+
+            // Check if player reached the gate
+            checkCollisionWithGate();
         }
 
         // Function to update enemies
@@ -525,9 +523,22 @@
             });
         }
 
+        // Function to check if player reached the gate
+        function checkCollisionWithGate() {
+            const playerRect = {
+                x: player.x,
+                y: player.y,
+                width: player.size,
+                height: player.size
+            };
+
+            if (isColliding(playerRect, gate)) {
+                levelCleared();
+            }
+        }
+
         // Function to handle game over
         function gameOver() {
-            clearInterval(timerInterval);
             if (levelClearedTimeout) {
                 clearTimeout(levelClearedTimeout);
             }

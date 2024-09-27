@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mobile Game with Spider Player and Bat Enemies</title>
+    <title>Spider and Bats Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /* Reset default margin and prevent scrolling */
         body {
             margin: 0;
             overflow: hidden;
             touch-action: none;
-            background-color: #000;
+            background-color: #000; /* Black background */
         }
 
+        /* Center the canvas */
         #gameCanvas {
             display: block;
             margin: 0 auto;
-            background-color: #000;
+            background-color: #000; /* Canvas background color */
         }
 
+        /* Joystick container styles */
         #joystick-container {
             position: absolute;
             bottom: 20px;
@@ -25,10 +28,11 @@
             height: 150px;
         }
     </style>
-    <!-- Include nippleJS library from CDN -->
+    <!-- Include nippleJS library for the virtual joystick -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.min.js"></script>
 </head>
 <body>
+    <!-- Game canvas -->
     <canvas id="gameCanvas"></canvas>
     <!-- Joystick container -->
     <div id="joystick-container"></div>
@@ -46,37 +50,37 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // Load images
+        // Load images for the player (spider) and enemy (bat)
         const playerImg = new Image();
         const enemyImg = new Image();
 
         let imagesLoaded = 0;
-        let imagesFailed = false;
 
-        function checkImagesLoaded() {
+        playerImg.onload = function() {
             imagesLoaded++;
-            if (imagesLoaded + imagesFailed === 2) {
+            if (imagesLoaded === 2) {
                 startGame();
             }
-        }
+        };
 
-        playerImg.onload = checkImagesLoaded;
-        enemyImg.onload = checkImagesLoaded;
+        enemyImg.onload = function() {
+            imagesLoaded++;
+            if (imagesLoaded === 2) {
+                startGame();
+            }
+        };
 
         playerImg.onerror = function() {
             console.error('Failed to load player image.');
-            imagesFailed = true;
-            checkImagesLoaded();
         };
 
         enemyImg.onerror = function() {
             console.error('Failed to load enemy image.');
-            imagesFailed = true;
-            checkImagesLoaded();
         };
 
+        // Set image sources
         playerImg.src = 'images/player_spider.png'; // Path to your spider image
-        enemyImg.src = 'images/enemy_bat.png'; // Path to your bat image
+        enemyImg.src = 'images/enemy_bat.png';      // Path to your bat image
 
         // Player object
         const player = {
@@ -99,15 +103,46 @@
         let timeLeft = 10;
         let timerInterval;
 
-        // Start the game after images are loaded or failed
+        // Start the game after images are loaded
         function startGame() {
             startLevel();
             gameLoop();
         }
 
-        // Initialize obstacles with a 4:1 length-to-width ratio
+        // Function to start a level
+        function startLevel() {
+            // Reset player position
+            player.x = canvas.width / 2 - player.size / 2;
+            player.y = canvas.height / 2 - player.size / 2;
+            player.dx = 0;
+            player.dy = 0;
+
+            timeLeft = 10; // Reset timer
+            initObstacles();
+            initEnemies(5 + (level - 1)); // Start with 5 enemies and add one per level
+
+            // Start the countdown timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    levelUp();
+                }
+            }, 1000);
+        }
+
+        // Function to handle leveling up
+        function levelUp() {
+            level++;
+            startLevel();
+        }
+
+        // Initialize obstacles with random positions and sizes
         function initObstacles() {
-            obstacles.length = 0;
+            obstacles.length = 0; // Clear any existing obstacles
             const numberOfObstacles = 4;
 
             const MIN_LENGTH = 100;
@@ -138,7 +173,6 @@
                     obstacle.x = Math.random() * (canvas.width - obstacle.width);
                     obstacle.y = Math.random() * (canvas.height - obstacle.height);
 
-                    // Ensure obstacle doesn't overlap with player or other obstacles
                     if (
                         !isColliding(obstacle, {
                             x: player.x,
@@ -158,7 +192,7 @@
 
         // Initialize enemies with random positions and speeds
         function initEnemies(numEnemies) {
-            enemies.length = 0;
+            enemies.length = 0; // Clear any existing enemies
             const minEnemySpeed = 0.75;
             const maxEnemySpeed = 3;
 
@@ -202,44 +236,33 @@
             }
         }
 
-        // Function to start a level
-        function startLevel() {
-            player.x = canvas.width / 2 - player.size / 2;
-            player.y = canvas.height / 2 - player.size / 2;
-            player.dx = 0;
-            player.dy = 0;
-
-            timeLeft = 10;
-            initObstacles();
-            initEnemies(5 + (level - 1));
-
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    levelUp();
-                }
-            }, 1000);
+        // Game loop
+        function gameLoop() {
+            clearCanvas();
+            updatePlayerPosition();
+            updateEnemies();
+            drawObstacles();
+            drawEnemies();
+            drawPlayer();
+            drawHUD();
+            requestAnimationFrame(gameLoop);
         }
 
-        // Function to handle leveling up
-        function levelUp() {
-            level++;
-            startLevel();
+        // Function to clear the canvas
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
         // Function to draw the player
         function drawPlayer() {
-            if (playerImg.complete && !imagesFailed) {
-                ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
-            } else {
-                // Fallback to a rectangle if image not loaded
-                ctx.fillStyle = '#ff6600'; // Orange color
-                ctx.fillRect(player.x, player.y, player.size, player.size);
-            }
+            ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
+        }
+
+        // Function to draw enemies
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.size, enemy.size);
+            });
         }
 
         // Function to draw obstacles
@@ -247,19 +270,6 @@
             ctx.fillStyle = '#555555'; // Gray color
             obstacles.forEach(obstacle => {
                 ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            });
-        }
-
-        // Function to draw enemies
-        function drawEnemies() {
-            enemies.forEach(enemy => {
-                if (enemyImg.complete && !imagesFailed) {
-                    ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.size, enemy.size);
-                } else {
-                    // Fallback to a rectangle if image not loaded
-                    ctx.fillStyle = '#ff0000'; // Red color
-                    ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
-                }
             });
         }
 
@@ -271,23 +281,6 @@
             ctx.fillText('Level: ' + level, 10, 30);
             ctx.textAlign = 'right';
             ctx.fillText('Time Left: ' + timeLeft, canvas.width - 10, 30);
-        }
-
-        // Function to clear the canvas
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-
-        // Game loop
-        function gameLoop() {
-            clearCanvas();
-            updatePlayerPosition();
-            updateEnemies();
-            drawObstacles();
-            drawEnemies();
-            drawPlayer();
-            drawHUD();
-            requestAnimationFrame(gameLoop);
         }
 
         // Update player position

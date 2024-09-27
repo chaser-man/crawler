@@ -12,10 +12,18 @@
             background-color: #000; /* Black background */
         }
 
+        /* Game container to hold canvas and joystick */
+        #gameContainer {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #000;
+        }
+
         /* Center the canvas */
         #gameCanvas {
             display: block;
-            margin: 0 auto;
             background-color: #000; /* Canvas background color */
         }
 
@@ -32,19 +40,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.min.js"></script>
 </head>
 <body>
-    <!-- Game canvas -->
-    <canvas id="gameCanvas"></canvas>
-    <!-- Joystick container -->
-    <div id="joystick-container"></div>
+    <!-- Game container -->
+    <div id="gameContainer">
+        <!-- Game canvas -->
+        <canvas id="gameCanvas"></canvas>
+        <!-- Joystick container -->
+        <div id="joystick-container"></div>
+    </div>
     <script>
         // Get the canvas and context
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Resize canvas to fit the window
+        // Set maximum canvas dimensions corresponding to a phone screen
+        const maxWidth = 375; // Maximum width (e.g., iPhone 6/7/8 width)
+        const maxHeight = 667; // Maximum height (e.g., iPhone 6/7/8 height)
+
+        // Resize canvas to fit the window, but limit to max dimensions
         function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            canvas.width = Math.min(window.innerWidth, maxWidth);
+            canvas.height = Math.min(window.innerHeight, maxHeight);
+
+            // Adjust game container size
+            const gameContainer = document.getElementById('gameContainer');
+            gameContainer.style.width = canvas.width + 'px';
+            gameContainer.style.height = canvas.height + 'px';
         }
 
         resizeCanvas();
@@ -84,6 +104,8 @@
 
         // Function to start a level
         function startLevel() {
+            resizeCanvas(); // Ensure canvas is resized at the start of each level
+
             // Place the player at a random position along the bottom of the screen
             player.x = Math.random() * (canvas.width - player.size);
             player.y = canvas.height - player.size - 10; // Slight offset from the bottom edge

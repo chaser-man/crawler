@@ -226,13 +226,13 @@
             const radius = player.size / 2;
 
             // Draw spider body
-            ctx.fillStyle = '#000000'; // Black color for the spider
+            ctx.fillStyle = '#808080'; // Changed to gray color for the spider
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
             ctx.fill();
 
             // Draw spider legs
-            ctx.strokeStyle = '#000000'; // Black color for the legs
+            ctx.strokeStyle = '#808080'; // Match legs to spider body color
             ctx.lineWidth = 2;
             for (let i = 0; i < 8; i++) {
                 const angle = (Math.PI / 4) * i;
@@ -250,7 +250,7 @@
             // Draw spider eyes
             ctx.fillStyle = '#FFFFFF'; // White color for the eyes
             const eyeOffsetX = radius / 2.5;
-            const eyeOffsetY = radius / 2.5;
+            const eyeOffsetY = radius / 4;
             const eyeRadius = radius / 5;
             ctx.beginPath();
             ctx.arc(centerX - eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
@@ -265,7 +265,7 @@
             ctx.fill();
         }
 
-        // Function to draw enemies (bats with wings and eyes)
+        // Function to draw enemies (improved bats with wings and eyes)
         function drawEnemies() {
             enemies.forEach(enemy => {
                 const centerX = enemy.x + enemy.size / 2;
@@ -274,43 +274,48 @@
                 const bodyHeight = enemy.size / 2;
 
                 // Draw bat body
-                ctx.fillStyle = '#3333FF'; // Dark blue color for the bat
+                ctx.fillStyle = '#8B4513'; // SaddleBrown color for the bat
                 ctx.beginPath();
                 ctx.ellipse(centerX, centerY, bodyWidth / 2, bodyHeight / 2, 0, 0, Math.PI * 2);
                 ctx.fill();
 
                 // Draw bat wings
+                ctx.fillStyle = '#8B4513'; // Match wing color to bat body
                 ctx.beginPath();
                 ctx.moveTo(centerX - bodyWidth / 2, centerY);
-                ctx.quadraticCurveTo(
-                    centerX - enemy.size,
-                    centerY - enemy.size / 2,
-                    centerX,
-                    centerY - bodyHeight
+                ctx.bezierCurveTo(
+                    centerX - bodyWidth * 1.5, centerY - bodyHeight,
+                    centerX - bodyWidth * 1.5, centerY + bodyHeight,
+                    centerX - bodyWidth / 2, centerY
                 );
-                ctx.quadraticCurveTo(
-                    centerX + enemy.size,
-                    centerY - enemy.size / 2,
-                    centerX + bodyWidth / 2,
-                    centerY
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(centerX + bodyWidth / 2, centerY);
+                ctx.bezierCurveTo(
+                    centerX + bodyWidth * 1.5, centerY - bodyHeight,
+                    centerX + bodyWidth * 1.5, centerY + bodyHeight,
+                    centerX + bodyWidth / 2, centerY
                 );
-                ctx.quadraticCurveTo(
-                    centerX + enemy.size,
-                    centerY + enemy.size / 2,
-                    centerX,
-                    centerY + bodyHeight
-                );
-                ctx.quadraticCurveTo(
-                    centerX - enemy.size,
-                    centerY + enemy.size / 2,
-                    centerX - bodyWidth / 2,
-                    centerY
-                );
+                ctx.fill();
+
+                // Draw bat ears
+                ctx.fillStyle = '#8B4513'; // Same color as body
+                ctx.beginPath();
+                ctx.moveTo(centerX - bodyWidth / 4, centerY - bodyHeight / 2);
+                ctx.lineTo(centerX - bodyWidth / 2, centerY - bodyHeight);
+                ctx.lineTo(centerX, centerY - bodyHeight / 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(centerX + bodyWidth / 4, centerY - bodyHeight / 2);
+                ctx.lineTo(centerX + bodyWidth / 2, centerY - bodyHeight);
+                ctx.lineTo(centerX, centerY - bodyHeight / 2);
                 ctx.fill();
 
                 // Draw bat eyes
                 ctx.fillStyle = '#FFFFFF'; // White color for the eyes
-                const eyeOffsetX = bodyWidth / 3;
+                const eyeOffsetX = bodyWidth / 4;
                 const eyeOffsetY = bodyHeight / 4;
                 const eyeRadius = bodyWidth / 6;
                 ctx.beginPath();

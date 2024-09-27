@@ -611,15 +611,13 @@
             startLevel();
         }
 
-        // Virtual joystick setup using nippleJS
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),
             mode: 'static',
-            position: { right: '75px', bottom: '75px' }, // Joystick on the right side
+            position: { right: '20%', bottom: '20%' }, // Adjust to the desired location
             color: 'white',
             size: 100
         };
-
 
         const joystick = nipplejs.create(joystickOptions);
 
@@ -639,6 +637,7 @@
             player.dx = 0;
             player.dy = 0;
         });
+
     </script>
 </body>
 </html>

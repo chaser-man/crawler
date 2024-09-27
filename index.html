@@ -6,15 +6,15 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden; /* Prevent scrolling */
-            touch-action: none; /* Prevent touch interactions from triggering browser actions */
-            background-color: #000; /* Set background color to black */
+            overflow: hidden;
+            touch-action: none;
+            background-color: #000;
         }
 
         #gameCanvas {
             display: block;
             margin: 0 auto;
-            background-color: #000; /* Canvas background color */
+            background-color: #000;
         }
 
         #joystick-container {
@@ -23,7 +23,6 @@
             left: 20px;
             width: 150px;
             height: 150px;
-            /* Adjust the size and position as needed */
         }
     </style>
     <!-- Include nippleJS library from CDN -->
@@ -52,19 +51,28 @@
         const enemyImg = new Image();
 
         let imagesLoaded = 0;
+        let imagesFailed = false;
 
-        playerImg.onload = function() {
+        function checkImagesLoaded() {
             imagesLoaded++;
-            if (imagesLoaded === 2) {
+            if (imagesLoaded + imagesFailed === 2) {
                 startGame();
             }
+        }
+
+        playerImg.onload = checkImagesLoaded;
+        enemyImg.onload = checkImagesLoaded;
+
+        playerImg.onerror = function() {
+            console.error('Failed to load player image.');
+            imagesFailed = true;
+            checkImagesLoaded();
         };
 
-        enemyImg.onload = function() {
-            imagesLoaded++;
-            if (imagesLoaded === 2) {
-                startGame();
-            }
+        enemyImg.onerror = function() {
+            console.error('Failed to load enemy image.');
+            imagesFailed = true;
+            checkImagesLoaded();
         };
 
         playerImg.src = 'images/player_spider.png'; // Path to your spider image
@@ -74,8 +82,8 @@
         const player = {
             x: canvas.width / 2 - 20,
             y: canvas.height / 2 - 20,
-            size: 40, // Adjusted size to better display the image
-            speed: 2, // Adjust speed as needed
+            size: 40,
+            speed: 2,
             dx: 0,
             dy: 0
         };
@@ -91,7 +99,7 @@
         let timeLeft = 10;
         let timerInterval;
 
-        // Start the game after images are loaded
+        // Start the game after images are loaded or failed
         function startGame() {
             startLevel();
             gameLoop();
@@ -99,13 +107,13 @@
 
         // Initialize obstacles with a 4:1 length-to-width ratio
         function initObstacles() {
-            obstacles.length = 0; // Clear any existing obstacles
+            obstacles.length = 0;
             const numberOfObstacles = 4;
 
-            const MIN_LENGTH = 100; // Minimum length of the obstacle
-            const MAX_LENGTH = 200; // Maximum length of the obstacle
-            const MIN_WIDTH = 20;   // Minimum width of the obstacle
-            const MAX_WIDTH = 30;   // Maximum width of the obstacle
+            const MIN_LENGTH = 100;
+            const MAX_LENGTH = 200;
+            const MIN_WIDTH = 20;
+            const MAX_WIDTH = 30;
 
             for (let i = 0; i < numberOfObstacles; i++) {
                 const obstacle = {
@@ -115,15 +123,12 @@
                     y: 0
                 };
 
-                // Randomly decide if the obstacle is horizontal or vertical
                 const isHorizontal = Math.random() < 0.5;
 
                 if (isHorizontal) {
-                    // Horizontal obstacle (long width, short height)
                     obstacle.width = MIN_LENGTH + Math.random() * (MAX_LENGTH - MIN_LENGTH);
                     obstacle.height = MIN_WIDTH + Math.random() * (MAX_WIDTH - MIN_WIDTH);
                 } else {
-                    // Vertical obstacle (short width, long height)
                     obstacle.width = MIN_WIDTH + Math.random() * (MAX_WIDTH - MIN_WIDTH);
                     obstacle.height = MIN_LENGTH + Math.random() * (MAX_LENGTH - MIN_LENGTH);
                 }
@@ -153,14 +158,14 @@
 
         // Initialize enemies with random positions and speeds
         function initEnemies(numEnemies) {
-            enemies.length = 0; // Clear any existing enemies
-            const minEnemySpeed = 0.75; // Half of previous speed
-            const maxEnemySpeed = 3;    // Double of previous speed
+            enemies.length = 0;
+            const minEnemySpeed = 0.75;
+            const maxEnemySpeed = 3;
 
             const halfEnemies = Math.floor(numEnemies / 2);
 
             for (let i = 0; i < numEnemies; i++) {
-                const enemySize = 40; // Adjusted size to better display the image
+                const enemySize = 40;
                 const enemy = {
                     x: 0,
                     y: 0,
@@ -173,22 +178,17 @@
                 while (!placed) {
                     enemy.x = Math.random() * (canvas.width - enemy.size);
 
-                    // Spawn half at the top, half at the bottom
                     if (i < halfEnemies) {
-                        // Spawn at the top (avoid center area)
                         enemy.y = Math.random() * (canvas.height * 0.25 - enemy.size);
                     } else {
-                        // Spawn at the bottom (avoid center area)
                         enemy.y = canvas.height * 0.75 + Math.random() * (canvas.height * 0.25 - enemy.size);
                     }
 
-                    // Generate random speed and direction
                     const speed = minEnemySpeed + Math.random() * (maxEnemySpeed - minEnemySpeed);
                     const angle = Math.random() * 2 * Math.PI;
                     enemy.dx = Math.cos(angle) * speed;
                     enemy.dy = Math.sin(angle) * speed;
 
-                    // Ensure enemy doesn't spawn on top of obstacles or other enemies
                     if (
                         !isCollidingWithObstacles(enemy.x, enemy.y, enemy.size) &&
                         !isCollidingWithPlayer(enemy) &&
@@ -204,17 +204,15 @@
 
         // Function to start a level
         function startLevel() {
-            // Reset player position
             player.x = canvas.width / 2 - player.size / 2;
             player.y = canvas.height / 2 - player.size / 2;
             player.dx = 0;
             player.dy = 0;
 
-            timeLeft = 10; // Reset timer
+            timeLeft = 10;
             initObstacles();
-            initEnemies(5 + (level - 1)); // Start with 5 enemies and add one per level
+            initEnemies(5 + (level - 1));
 
-            // Start the countdown timer
             if (timerInterval) {
                 clearInterval(timerInterval);
             }
@@ -235,7 +233,13 @@
 
         // Function to draw the player
         function drawPlayer() {
-            ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
+            if (playerImg.complete && !imagesFailed) {
+                ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
+            } else {
+                // Fallback to a rectangle if image not loaded
+                ctx.fillStyle = '#ff6600'; // Orange color
+                ctx.fillRect(player.x, player.y, player.size, player.size);
+            }
         }
 
         // Function to draw obstacles
@@ -249,7 +253,13 @@
         // Function to draw enemies
         function drawEnemies() {
             enemies.forEach(enemy => {
-                ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.size, enemy.size);
+                if (enemyImg.complete && !imagesFailed) {
+                    ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.size, enemy.size);
+                } else {
+                    // Fallback to a rectangle if image not loaded
+                    ctx.fillStyle = '#ff0000'; // Red color
+                    ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+                }
             });
         }
 
@@ -263,10 +273,9 @@
             ctx.fillText('Time Left: ' + timeLeft, canvas.width - 10, 30);
         }
 
-        // Function to clear the canvas (fill it with black)
+        // Function to clear the canvas
         function clearCanvas() {
-            ctx.fillStyle = '#000'; // Set the fill style to black
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
         // Game loop
@@ -283,11 +292,9 @@
 
         // Update player position
         function updatePlayerPosition() {
-            // Save the potential new position
             let newX = player.x + player.dx;
             let newY = player.y + player.dy;
 
-            // Check collision with obstacles
             if (!isCollidingWithObstacles(newX, player.y, player.size)) {
                 player.x = newX;
             } else {
@@ -315,7 +322,6 @@
                 let newEnemyX = enemy.x + enemy.dx;
                 let newEnemyY = enemy.y + enemy.dy;
 
-                // Bounce off walls
                 if (newEnemyX <= 0 || newEnemyX >= canvas.width - enemy.size) {
                     enemy.dx *= -1;
                     newEnemyX = enemy.x + enemy.dx;
@@ -325,7 +331,6 @@
                     newEnemyY = enemy.y + enemy.dy;
                 }
 
-                // Check collision with obstacles
                 if (!isCollidingWithObstacles(newEnemyX, enemy.y, enemy.size)) {
                     enemy.x = newEnemyX;
                 } else {
@@ -400,7 +405,6 @@
                 };
 
                 if (isColliding(playerRect, enemyRect)) {
-                    // Handle collision with enemy
                     gameOver();
                 }
             });
@@ -410,7 +414,6 @@
         function gameOver() {
             clearInterval(timerInterval);
             alert('Game Over! You reached Level ' + level);
-            // Reset game
             resetGame();
         }
 
@@ -423,7 +426,7 @@
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),
             mode: 'static',
-            position: { left: '75px', bottom: '75px' }, // Position the joystick
+            position: { left: '75px', bottom: '75px' },
             color: 'white',
             size: 100
         };
@@ -431,21 +434,18 @@
         const joystick = nipplejs.create(joystickOptions);
 
         joystick.on('move', function(evt, data) {
-            if (data.angle) { // Check if data.angle exists
+            if (data.angle) {
                 const angle = data.angle.radian;
                 const distance = data.distance;
 
-                // Calculate movement direction based on the joystick angle
                 player.dx = Math.cos(angle) * player.speed * (distance / joystickOptions.size);
                 player.dy = Math.sin(angle) * player.speed * (distance / joystickOptions.size);
 
-                // Invert dy because canvas y-axis is inverted
                 player.dy = -player.dy;
             }
         });
 
         joystick.on('end', function() {
-            // Stop the player when the joystick is released
             player.dx = 0;
             player.dy = 0;
         });

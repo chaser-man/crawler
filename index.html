@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spider and Bats Game (Gate Version)</title>
+    <title>Spider and Bats Game (Exit Version)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Reset default margin and prevent scrolling */
@@ -60,12 +60,12 @@
             dy: 0
         };
 
-        // Gate object
-        const gate = {
+        // Exit (Gate) object
+        const exit = {
             x: 0,
             y: 0,
-            width: 50,
-            height: 20
+            width: 60,
+            height: 80
         };
 
         // Obstacles array
@@ -91,9 +91,9 @@
             player.dx = 0;
             player.dy = 0;
 
-            // Place the gate at a random position along the top of the screen
-            gate.x = Math.random() * (canvas.width - gate.width);
-            gate.y = 10; // Slight offset from the top edge
+            // Place the exit at a random position along the top of the screen
+            exit.x = Math.random() * (canvas.width - exit.width);
+            exit.y = 10; // Slight offset from the top edge
 
             initObstacles();
             initEnemies(3 + (level - 1)); // Start with 3 enemies and add one per level
@@ -119,7 +119,7 @@
         // Initialize obstacles with random positions and sizes
         function initObstacles() {
             obstacles.length = 0; // Clear any existing obstacles
-            const numberOfObstacles = 4;
+            const numberOfObstacles = 8; // Increased to 8 obstacles
 
             const MIN_LENGTH = 100;
             const MAX_LENGTH = 200;
@@ -156,7 +156,7 @@
                             width: player.size,
                             height: player.size
                         }) &&
-                        !isColliding(obstacle, gate) &&
+                        !isColliding(obstacle, exit) &&
                         !obstacles.some(existingObstacle => isColliding(obstacle, existingObstacle))
                     ) {
                         placed = true;
@@ -196,7 +196,7 @@
                     if (
                         !isCollidingWithObstacles(enemy.x, enemy.y, enemy.size) &&
                         !isCollidingWithPlayer(enemy) &&
-                        !isColliding(enemy, gate) &&
+                        !isColliding(enemy, exit) &&
                         !enemies.some(existingEnemy => isColliding(enemy, existingEnemy))
                     ) {
                         placed = true;
@@ -218,7 +218,7 @@
                 updateEnemies();
                 drawObstacles();
                 drawEnemies();
-                drawGate();
+                drawExit();
                 drawPlayer();
                 drawHUD();
             }
@@ -242,10 +242,30 @@
             ctx.fillText('Level Cleared!', canvas.width / 2, canvas.height / 2);
         }
 
-        // Function to draw the gate
-        function drawGate() {
-            ctx.fillStyle = '#FFD700'; // Gold color for the gate
-            ctx.fillRect(gate.x, gate.y, gate.width, gate.height);
+        // Function to draw the exit
+        function drawExit() {
+            const centerX = exit.x + exit.width / 2;
+            const centerY = exit.y + exit.height / 2;
+
+            // Draw door frame
+            ctx.fillStyle = '#8B4513'; // Brown color for the frame
+            ctx.fillRect(exit.x, exit.y, exit.width, exit.height);
+
+            // Draw doorway (arch)
+            ctx.fillStyle = '#000'; // Black color for the doorway
+            ctx.beginPath();
+            ctx.moveTo(exit.x, exit.y + exit.height);
+            ctx.lineTo(exit.x, exit.y + exit.height / 2);
+            ctx.arc(centerX, exit.y + exit.height / 2, exit.width / 2, Math.PI, 0, false);
+            ctx.lineTo(exit.x + exit.width, exit.y + exit.height);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw "EXIT" sign above the door
+            ctx.fillStyle = '#FFFFFF'; // White color for text
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('EXIT', centerX, exit.y - 5);
         }
 
         // Function to draw the player (spider with legs and eyes)
@@ -425,8 +445,8 @@
             // Check collision with enemies
             checkCollisionWithEnemies();
 
-            // Check if player reached the gate
-            checkCollisionWithGate();
+            // Check if player reached the exit
+            checkCollisionWithExit();
         }
 
         // Function to update enemies
@@ -523,8 +543,8 @@
             });
         }
 
-        // Function to check if player reached the gate
-        function checkCollisionWithGate() {
+        // Function to check if player reached the exit
+        function checkCollisionWithExit() {
             const playerRect = {
                 x: player.x,
                 y: player.y,
@@ -532,7 +552,7 @@
                 height: player.size
             };
 
-            if (isColliding(playerRect, gate)) {
+            if (isColliding(playerRect, exit)) {
                 levelCleared();
             }
         }

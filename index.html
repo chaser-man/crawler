@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spider and Bats Game</title>
+    <title>Spider and Bats Game (Circular Gate with Shadow)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
@@ -106,7 +106,7 @@
 
             while (!pathExists) {
                 obstacles.length = 0;
-                const numberOfObstacles = 20;
+                const numberOfObstacles = 15;
 
                 const MIN_LENGTH = 100;
                 const MAX_LENGTH = 200;
@@ -144,8 +144,8 @@
                                 width: player.size,
                                 height: player.size
                             }) &&
-                            !isRectCircleColliding(obstacle, gate) &&
-                            !obstacles.some(existingObstacle => isColliding(obstacle, existingObstacle))
+                            !isRectCircleColliding(obstacle, gate)
+                            // Removed the check to prevent obstacles from overlapping
                         ) {
                             placed = true;
                         }

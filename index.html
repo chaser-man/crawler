@@ -243,22 +243,17 @@
 
         // Function to draw the gate (purple circle with a more visible, blurry, centered shadow)
         function drawGate() {
-            const centerX = gate.x + gate.size / 2;
-            const centerY = gate.y;
-
             ctx.save(); // Save the current state
 
             // Set shadow properties
-            ctx.shadowColor = 'rgba(255, 0, 255, 0.7)'; // More opaque magenta shadow
-            ctx.shadowBlur = 40; // Increased blur amount for a more noticeable shadow
-            ctx.shadowOffsetX = 0; // Centered shadow
-            ctx.shadowOffsetY = 0; // Centered shadow
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; // Semi-transparent black shadow
+            ctx.shadowBlur = 10; // Amount of blur
+            ctx.shadowOffsetX = 0; // Shadow directly below
+            ctx.shadowOffsetY = 5; // Vertical offset for the shadow
 
-            // Draw gate (purple circle)
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, gate.size / 2, 0, Math.PI * 2);
-            ctx.fillStyle = '#DA70D6'; // Lighter purple color for the gate
-            ctx.fill();
+            // Draw gate (purple rectangle)
+            ctx.fillStyle = '#800080'; // Purple color for the gate
+            ctx.fillRect(gate.x, gate.y, gate.width, gate.height);
 
             ctx.restore(); // Restore the previous state
         }

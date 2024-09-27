@@ -84,7 +84,7 @@
             gate.y = gate.radius + 10;
 
             initObstacles();
-            initEnemies(15);
+            initEnemies(3 + (level - 1)); // Starting with 3 enemies, increasing by 1 each level
         }
 
         function levelCleared() {
@@ -106,7 +106,7 @@
 
             while (!pathExists) {
                 obstacles.length = 0;
-                const numberOfObstacles = 15;
+                const numberOfObstacles = 15; // Set to 15 obstacles
 
                 const MIN_LENGTH = 100;
                 const MAX_LENGTH = 200;
@@ -164,7 +164,7 @@
         }
 
         function isPathAvailable() {
-            const gridSize = 10;
+            const gridSize = 10; // Reduced grid size for higher resolution
             const cols = Math.floor(canvas.width / gridSize);
             const rows = Math.floor(canvas.height / gridSize);
 
@@ -204,6 +204,7 @@
             const gateX = Math.floor(gate.x / gridSize);
             const gateY = Math.floor(gate.y / gridSize);
 
+            // Ensure start and gate positions are within grid bounds and not blocked
             if (
                 startX < 0 || startX >= cols ||
                 startY < 0 || startY >= rows ||
@@ -219,10 +220,14 @@
             visited[startY][startX] = true;
 
             const directions = [
-                { x: 0, y: -1 },
-                { x: 1, y: 0 },
-                { x: 0, y: 1 },
-                { x: -1, y: 0 }
+                { x: 0, y: -1 }, // Up
+                { x: 1, y: 0 },  // Right
+                { x: 0, y: 1 },  // Down
+                { x: -1, y: 0 }, // Left
+                { x: 1, y: -1 }, // Up-Right
+                { x: 1, y: 1 },  // Down-Right
+                { x: -1, y: 1 }, // Down-Left
+                { x: -1, y: -1 } // Up-Left
             ];
 
             while (queue.length > 0) {
@@ -267,7 +272,8 @@
                 };
 
                 let placed = false;
-                while (!placed) {
+                let attempts = 0;
+                while (!placed && attempts < 100) {
                     enemy.x = Math.random() * (canvas.width - enemy.size);
                     enemy.y = Math.random() * ((canvas.height / 2) - enemy.size);
 
@@ -284,9 +290,14 @@
                     ) {
                         placed = true;
                     }
+                    attempts++;
                 }
 
-                enemies.push(enemy);
+                if (placed) {
+                    enemies.push(enemy);
+                } else {
+                    console.warn('Could not place enemy after 100 attempts.');
+                }
             }
         }
 

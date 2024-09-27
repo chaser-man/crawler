@@ -1,127 +1,112 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spider and Bats Game (Circular Gate with Shadow)</title>
+    <title>Spider and Bats Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* Reset default margin and prevent scrolling */
         body {
             margin: 0;
             overflow: hidden;
             touch-action: none;
-            background-color: #000; /* Black background */
+            background-color: #000;
         }
-
-        /* Center the canvas */
         #gameCanvas {
             display: block;
             margin: 0 auto;
-            background-color: #000; /* Canvas background color */
+            background-color: #000;
         }
-
-        /* Joystick container styles */
         #joystick-container {
             position: absolute;
             bottom: 20px;
-            left: 20px; /* Joystick on the left side */
+            right: 20px;
             width: 150px;
             height: 150px;
         }
     </style>
-    <!-- Include nippleJS library for the virtual joystick -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.min.js"></script>
 </head>
 <body>
-    <!-- Game canvas -->
     <canvas id="gameCanvas"></canvas>
-    <!-- Joystick container -->
     <div id="joystick-container"></div>
     <script>
-        // Get the canvas and context
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Resize canvas to fit the window
+        function isMobileDevice() {
+            return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        }
+
         function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            if (isMobileDevice()) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            } else {
+                canvas.width = 375;
+                canvas.height = 667;
+            }
         }
 
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // Player object
         const player = {
             x: 0,
             y: 0,
             size: 30,
-            speed: 3.5, // Player speed set to 4
+            speed: 3.5,
             dx: 0,
             dy: 0
         };
 
-        // Gate object (circular)
         const gate = {
             x: 0,
             y: 0,
-            radius: 25 // Adjust the size as needed
+            radius: 25
         };
 
-        // Obstacles array
         const obstacles = [];
-
-        // Enemies array
         const enemies = [];
 
-        // Game variables
         let level = 1;
         let showingLevelCleared = false;
         let levelClearedTimeout;
 
-        // Start the game
         startLevel();
         gameLoop();
 
-        // Function to start a level
         function startLevel() {
-            // Place the player at a random position along the bottom of the screen
             player.x = Math.random() * (canvas.width - player.size);
-            player.y = canvas.height - player.size - 10; // Slight offset from the bottom edge
+            player.y = canvas.height - player.size - 10;
             player.dx = 0;
             player.dy = 0;
 
-            // Place the gate at a random position along the top of the screen
             gate.x = Math.random() * (canvas.width - gate.radius * 2) + gate.radius;
-            gate.y = gate.radius + 10; // Slight offset from the top edge
+            gate.y = gate.radius + 10;
 
             initObstacles();
-            initEnemies(3 + (level - 1)); // Start with 3 enemies and add one per level
+            initEnemies(3 + (level - 1));
         }
 
-        // Function to handle level cleared
         function levelCleared() {
             showingLevelCleared = true;
 
-            // Set a timeout to proceed to the next level after 2 seconds
             levelClearedTimeout = setTimeout(() => {
                 showingLevelCleared = false;
                 levelUp();
             }, 2000);
         }
 
-        // Function to handle leveling up
         function levelUp() {
             level++;
             startLevel();
         }
 
-        // Initialize obstacles with random positions and sizes
         function initObstacles() {
             let pathExists = false;
 
             while (!pathExists) {
-                obstacles.length = 0; // Clear any existing obstacles
-                const numberOfObstacles = 6; // Six obstacles as per your request
+                obstacles.length = 0;
+                const numberOfObstacles = 10;
 
                 const MIN_LENGTH = 100;
                 const MAX_LENGTH = 200;
@@ -170,21 +155,94 @@
                     obstacles.push(obstacle);
                 }
 
-                // Check if a path exists
                 pathExists = isPathAvailable();
-                // If no path exists, the loop will run again to regenerate obstacles
             }
         }
 
+        function isPathAvailable() {
+            const gridSize = 20;
+            const cols = Math.floor(canvas.width / gridSize);
+            const rows = Math.floor(canvas.height / gridSize);
 
-        // Initialize enemies with random positions and speeds
+            const grid = [];
+            for (let y = 0; y < rows; y++) {
+                grid[y] = [];
+                for (let x = 0; x < cols; x++) {
+                    grid[y][x] = 0;
+                }
+            }
+
+            obstacles.forEach(obstacle => {
+                const startX = Math.floor(obstacle.x / gridSize);
+                const startY = Math.floor(obstacle.y / gridSize);
+                const endX = Math.floor((obstacle.x + obstacle.width) / gridSize);
+                const endY = Math.floor((obstacle.y + obstacle.height) / gridSize);
+
+                for (let y = startY; y <= endY && y < rows; y++) {
+                    for (let x = startX; x <= endX && x < cols; x++) {
+                        grid[y][x] = 1;
+                    }
+                }
+            });
+
+            const queue = [];
+            const visited = [];
+
+            for (let y = 0; y < rows; y++) {
+                visited[y] = [];
+                for (let x = 0; x < cols; x++) {
+                    visited[y][x] = false;
+                }
+            }
+
+            const startX = Math.floor((player.x + player.size / 2) / gridSize);
+            const startY = Math.floor((player.y + player.size / 2) / gridSize);
+            const gateX = Math.floor(gate.x / gridSize);
+            const gateY = Math.floor(gate.y / gridSize);
+
+            queue.push({ x: startX, y: startY });
+            visited[startY][startX] = true;
+
+            const directions = [
+                { x: 0, y: -1 },
+                { x: 1, y: 0 },
+                { x: 0, y: 1 },
+                { x: -1, y: 0 }
+            ];
+
+            while (queue.length > 0) {
+                const current = queue.shift();
+
+                if (current.x === gateX && current.y === gateY) {
+                    return true;
+                }
+
+                for (let i = 0; i < directions.length; i++) {
+                    const nextX = current.x + directions[i].x;
+                    const nextY = current.y + directions[i].y;
+
+                    if (
+                        nextX >= 0 && nextX < cols &&
+                        nextY >= 0 && nextY < rows &&
+                        !visited[nextY][nextX] &&
+                        grid[nextY][nextX] === 0
+                    ) {
+                        visited[nextY][nextX] = true;
+                        queue.push({ x: nextX, y: nextY });
+                    }
+                }
+            }
+
+            return false;
+        }
+
         function initEnemies(numEnemies) {
-            enemies.length = 0; // Clear any existing enemies
+            enemies.length = 0;
             const minEnemySpeed = 0.75;
             const maxEnemySpeed = 3;
 
             for (let i = 0; i < numEnemies; i++) {
-                const enemySize = 30; // Adjusted size for better visibility
+                const enemySize = 30;
                 const enemy = {
                     x: 0,
                     y: 0,
@@ -196,7 +254,7 @@
                 let placed = false;
                 while (!placed) {
                     enemy.x = Math.random() * (canvas.width - enemy.size);
-                    enemy.y = Math.random() * ((canvas.height / 2) - enemy.size); // Top half of the screen
+                    enemy.y = Math.random() * ((canvas.height / 2) - enemy.size);
 
                     const speed = minEnemySpeed + Math.random() * (maxEnemySpeed - minEnemySpeed);
                     const angle = Math.random() * 2 * Math.PI;
@@ -217,7 +275,6 @@
             }
         }
 
-        // Game loop
         function gameLoop() {
             clearCanvas();
 
@@ -226,9 +283,10 @@
             } else {
                 updatePlayerPosition();
                 updateEnemies();
+                drawOutline();
                 drawObstacles();
                 drawEnemies();
-                drawGate(); // Draw the gate (circular with shadow)
+                drawGate();
                 drawPlayer();
                 drawHUD();
             }
@@ -236,60 +294,59 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Function to clear the canvas
+        function drawOutline() {
+            if (!isMobileDevice()) {
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        // Function to draw the "Level Cleared" screen
         function drawLevelClearedScreen() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Semi-transparent overlay
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = '#FFFFFF'; // White color for text
+            ctx.fillStyle = '#FFFFFF';
             ctx.font = '48px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('Level Cleared!', canvas.width / 2, canvas.height / 2);
         }
 
-        // Function to draw the gate (circular with purple shadow)
         function drawGate() {
-            ctx.save(); // Save the current state
+            ctx.save();
 
-            // Set shadow properties
-            ctx.shadowColor = 'rgb(128, 0, 128)'; // Semi-transparent purple shadow
-            ctx.shadowBlur = 20; // Amount of blur, previously 20
-            ctx.shadowOffsetX = 0; // Centered shadow
-            ctx.shadowOffsetY = 0; // Centered shadow
+            ctx.shadowColor = 'rgba(128, 0, 128, 0.5)';
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
 
-            // Draw gate (purple circle)
             ctx.beginPath();
             ctx.arc(gate.x, gate.y, gate.radius, 0, Math.PI * 2);
-            ctx.fillStyle = '#800080'; // Purple color for the gate
+            ctx.fillStyle = '#800080';
             ctx.fill();
 
-            ctx.restore(); // Restore the previous state
+            ctx.restore();
         }
 
-        // Function to draw the player (spider with legs and eyes)
         function drawPlayer() {
             const centerX = player.x + player.size / 2;
             const centerY = player.y + player.size / 2;
             const radius = player.size / 2;
 
-            // Draw spider body
-            ctx.fillStyle = '#808080'; // Gray color for the spider
+            ctx.fillStyle = '#808080';
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
             ctx.fill();
 
-            // Draw spider legs
-            ctx.strokeStyle = '#808080'; // Match legs to spider body color
+            ctx.strokeStyle = '#808080';
             ctx.lineWidth = 2;
 
-            // Left side legs (4 legs)
             for (let i = 0; i < 4; i++) {
-                const angle = Math.PI + (i - 1.5) * (Math.PI / 8); // Adjust angles for left side legs
+                const angle = Math.PI + (i - 1.5) * (Math.PI / 8);
                 const legLength = radius + 10;
                 const startX = centerX + Math.cos(angle) * radius;
                 const startY = centerY + Math.sin(angle) * radius;
@@ -303,9 +360,8 @@
                 ctx.stroke();
             }
 
-            // Right side legs (4 legs)
             for (let i = 0; i < 4; i++) {
-                const angle = (i - 1.5) * (Math.PI / 8); // Adjust angles for right side legs
+                const angle = (i - 1.5) * (Math.PI / 8);
                 const legLength = radius + 10;
                 const startX = centerX + Math.cos(angle) * radius;
                 const startY = centerY + Math.sin(angle) * radius;
@@ -319,8 +375,7 @@
                 ctx.stroke();
             }
 
-            // Draw spider eyes
-            ctx.fillStyle = '#FFFFFF'; // White color for the eyes
+            ctx.fillStyle = '#FFFFFF';
             const eyeOffsetX = radius / 2.5;
             const eyeOffsetY = radius / 4;
             const eyeRadius = radius / 5;
@@ -329,15 +384,13 @@
             ctx.arc(centerX + eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
             ctx.fill();
 
-            // Draw pupils
-            ctx.fillStyle = '#000000'; // Black color for the pupils
+            ctx.fillStyle = '#000000';
             ctx.beginPath();
             ctx.arc(centerX - eyeOffsetX, centerY - eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
             ctx.arc(centerX + eyeOffsetX, centerY - eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Function to draw enemies (improved bats with red eyes)
         function drawEnemies() {
             enemies.forEach(enemy => {
                 const centerX = enemy.x + enemy.size / 2;
@@ -345,37 +398,32 @@
                 const bodyWidth = enemy.size / 2;
                 const bodyHeight = enemy.size / 2;
 
-                // Draw bat body
-                ctx.fillStyle = '#8B4513'; // SaddleBrown color for the bat
+                ctx.fillStyle = '#8B4513';
                 ctx.beginPath();
                 ctx.ellipse(centerX, centerY, bodyWidth / 2, bodyHeight / 2, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Draw bat wings (larger)
-                ctx.fillStyle = '#8B4513'; // Match wing color to bat body
+                ctx.fillStyle = '#8B4513';
 
-                // Left wing
                 ctx.beginPath();
                 ctx.moveTo(centerX - bodyWidth / 2, centerY);
                 ctx.bezierCurveTo(
-                    centerX - bodyWidth * 2, centerY - bodyHeight * 1.5, // Control point 1
-                    centerX - bodyWidth * 2, centerY + bodyHeight * 1.5, // Control point 2
+                    centerX - bodyWidth * 2, centerY - bodyHeight * 1.5,
+                    centerX - bodyWidth * 2, centerY + bodyHeight * 1.5,
                     centerX - bodyWidth / 2, centerY
                 );
                 ctx.fill();
 
-                // Right wing
                 ctx.beginPath();
                 ctx.moveTo(centerX + bodyWidth / 2, centerY);
                 ctx.bezierCurveTo(
-                    centerX + bodyWidth * 2, centerY - bodyHeight * 1.5, // Control point 1
-                    centerX + bodyWidth * 2, centerY + bodyHeight * 1.5, // Control point 2
+                    centerX + bodyWidth * 2, centerY - bodyHeight * 1.5,
+                    centerX + bodyWidth * 2, centerY + bodyHeight * 1.5,
                     centerX + bodyWidth / 2, centerY
                 );
                 ctx.fill();
 
-                // Draw bat ears
-                ctx.fillStyle = '#8B4513'; // Same color as body
+                ctx.fillStyle = '#8B4513';
                 ctx.beginPath();
                 ctx.moveTo(centerX - bodyWidth / 4, centerY - bodyHeight / 2);
                 ctx.lineTo(centerX - bodyWidth / 2, centerY - bodyHeight);
@@ -388,8 +436,7 @@
                 ctx.lineTo(centerX, centerY - bodyHeight / 2);
                 ctx.fill();
 
-                // Draw bat eyes
-                ctx.fillStyle = '#FFFFFF'; // White color for the eyes
+                ctx.fillStyle = '#FFFFFF';
                 const eyeOffsetX = bodyWidth / 4;
                 const eyeOffsetY = bodyHeight / 4;
                 const eyeRadius = bodyWidth / 6;
@@ -398,8 +445,7 @@
                 ctx.arc(centerX + eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Draw pupils (red)
-                ctx.fillStyle = '#FF0000'; // Red color for the pupils
+                ctx.fillStyle = '#FF0000';
                 ctx.beginPath();
                 ctx.arc(centerX - eyeOffsetX, centerY - eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
                 ctx.arc(centerX + eyeOffsetX, centerY - eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
@@ -407,23 +453,20 @@
             });
         }
 
-        // Function to draw obstacles
         function drawObstacles() {
-            ctx.fillStyle = '#555555'; // Gray color
+            ctx.fillStyle = '#555555';
             obstacles.forEach(obstacle => {
                 ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
             });
         }
 
-        // Function to draw HUD (Level)
         function drawHUD() {
-            ctx.fillStyle = '#ffffff'; // White color
+            ctx.fillStyle = '#ffffff';
             ctx.font = '24px Arial';
             ctx.textAlign = 'left';
             ctx.fillText('Level: ' + level, 10, 30);
         }
 
-        // Update player position
         function updatePlayerPosition() {
             let newX = player.x + player.dx;
             let newY = player.y + player.dy;
@@ -439,20 +482,15 @@
                 player.dy = 0;
             }
 
-            // Keep the player within the canvas boundaries
             if (player.x < 0) player.x = 0;
             if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
             if (player.y < 0) player.y = 0;
             if (player.y > canvas.height - player.size) player.y = canvas.height - player.size;
 
-            // Check collision with enemies
             checkCollisionWithEnemies();
-
-            // Check if player reached the gate
             checkCollisionWithGate();
         }
 
-        // Function to update enemies
         function updateEnemies() {
             enemies.forEach(enemy => {
                 let newEnemyX = enemy.x + enemy.dx;
@@ -480,7 +518,6 @@
             });
         }
 
-        // Function to check collision between the player/enemies and obstacles
         function isCollidingWithObstacles(x, y, size) {
             const rect = {
                 x: x,
@@ -494,7 +531,6 @@
             });
         }
 
-        // Function to check collision between an enemy and the player
         function isCollidingWithPlayer(enemy) {
             const enemyRect = {
                 x: enemy.x,
@@ -513,7 +549,6 @@
             return isColliding(enemyRect, playerRect);
         }
 
-        // Function to check collision between two rectangles
         function isColliding(rect1, rect2) {
             return (
                 rect1.x < rect2.x + rect2.width &&
@@ -523,7 +558,6 @@
             );
         }
 
-        // Function to check collision between two circles
         function isCircleColliding(circle1, circle2) {
             const dx = circle1.x - circle2.x;
             const dy = circle1.y - circle2.y;
@@ -532,7 +566,6 @@
             return distance < circle1.radius + circle2.radius;
         }
 
-        // Function to check collision between a rectangle and a circle
         function isRectCircleColliding(rect, circle) {
             const distX = Math.abs(circle.x - rect.x - rect.width / 2);
             const distY = Math.abs(circle.y - rect.y - rect.height / 2);
@@ -548,7 +581,6 @@
             return (dx * dx + dy * dy <= (circle.radius * circle.radius));
         }
 
-        // Function to check collision with enemies
         function checkCollisionWithEnemies() {
             const playerRect = {
                 x: player.x,
@@ -571,7 +603,6 @@
             });
         }
 
-        // Function to check if player reached the gate
         function checkCollisionWithGate() {
             const playerCircle = {
                 x: player.x + player.size / 2,
@@ -590,7 +621,6 @@
             }
         }
 
-        // Function to check if enemy is colliding with the gate
         function isCollidingWithGate(enemy) {
             const enemyCircle = {
                 x: enemy.x + enemy.size / 2,
@@ -607,7 +637,6 @@
             return isCircleColliding(enemyCircle, gateCircle);
         }
 
-        // Function to handle game over
         function gameOver() {
             if (levelClearedTimeout) {
                 clearTimeout(levelClearedTimeout);
@@ -622,92 +651,10 @@
             startLevel();
         }
 
-        // Function to check if there's a path from the player to the gate
-        function isPathAvailable() {
-            const gridSize = 20; // Adjust the grid size as needed
-            const cols = Math.floor(canvas.width / gridSize);
-            const rows = Math.floor(canvas.height / gridSize);
-
-            // Create a grid representation of the obstacles
-            const grid = [];
-            for (let y = 0; y < rows; y++) {
-                grid[y] = [];
-                for (let x = 0; x < cols; x++) {
-                    grid[y][x] = 0; // Initialize as empty
-                }
-            }
-
-            // Mark obstacles on the grid
-            obstacles.forEach(obstacle => {
-                const startX = Math.floor(obstacle.x / gridSize);
-                const startY = Math.floor(obstacle.y / gridSize);
-                const endX = Math.floor((obstacle.x + obstacle.width) / gridSize);
-                const endY = Math.floor((obstacle.y + obstacle.height) / gridSize);
-
-                for (let y = startY; y <= endY && y < rows; y++) {
-                    for (let x = startX; x <= endX && x < cols; x++) {
-                        grid[y][x] = 1; // Mark as obstacle
-                    }
-                }
-            });
-
-            // BFS to find a path from player to gate
-            const queue = [];
-            const visited = [];
-
-            for (let y = 0; y < rows; y++) {
-                visited[y] = [];
-                for (let x = 0; x < cols; x++) {
-                    visited[y][x] = false;
-                }
-            }
-
-            const startX = Math.floor((player.x + player.size / 2) / gridSize);
-            const startY = Math.floor((player.y + player.size / 2) / gridSize);
-            const gateX = Math.floor(gate.x / gridSize);
-            const gateY = Math.floor(gate.y / gridSize);
-
-            queue.push({ x: startX, y: startY });
-            visited[startY][startX] = true;
-
-            const directions = [
-                { x: 0, y: -1 }, // Up
-                { x: 1, y: 0 },  // Right
-                { x: 0, y: 1 },  // Down
-                { x: -1, y: 0 }  // Left
-            ];
-
-            while (queue.length > 0) {
-                const current = queue.shift();
-
-                if (current.x === gateX && current.y === gateY) {
-                    return true; // Path found
-                }
-
-                for (let i = 0; i < directions.length; i++) {
-                    const nextX = current.x + directions[i].x;
-                    const nextY = current.y + directions[i].y;
-
-                    if (
-                        nextX >= 0 && nextX < cols &&
-                        nextY >= 0 && nextY < rows &&
-                        !visited[nextY][nextX] &&
-                        grid[nextY][nextX] === 0
-                    ) {
-                        visited[nextY][nextX] = true;
-                        queue.push({ x: nextX, y: nextY });
-                    }
-                }
-            }
-
-            return false; // No path found
-        }
-
-
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),
             mode: 'static',
-            position: { right: '50px', bottom: '50px' }, // Exact position within the container
+            position: { right: '50px', bottom: '50px' },
             color: 'white',
             size: 100
         };
@@ -726,11 +673,10 @@
             }
         });
 
-joystick.on('end', function() {
-    player.dx = 0;
-    player.dy = 0;
-});
-
+        joystick.on('end', function() {
+            player.dx = 0;
+            player.dy = 0;
+        });
 
     </script>
 </body>

@@ -121,7 +121,7 @@
                         y: 0
                     };
 
-                    const isHorizontal = Math.random() < 0.5;
+                    const isHorizontal = Math.random() < 0.25;//originally 0.5
 
                     if (isHorizontal) {
                         obstacle.width = MIN_LENGTH + Math.random() * (MAX_LENGTH - MIN_LENGTH);
@@ -144,8 +144,8 @@
                                 width: player.size,
                                 height: player.size
                             }) &&
-                            !isRectCircleColliding(obstacle, gate)
-                            // Removed the check to prevent obstacles from overlapping
+                            !isRectCircleColliding(obstacle, gate) &&
+                            !obstacles.some(existingObstacle => isColliding(obstacle, existingObstacle))
                         ) {
                             placed = true;
                         }

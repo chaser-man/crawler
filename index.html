@@ -117,54 +117,65 @@
 
         // Initialize obstacles with random positions and sizes
         function initObstacles() {
-            obstacles.length = 0; // Clear any existing obstacles
-            const numberOfObstacles = 6; // Six obstacles as per your request
+            let pathExists = false;
 
-            const MIN_LENGTH = 100;
-            const MAX_LENGTH = 200;
-            const MIN_WIDTH = 20;
-            const MAX_WIDTH = 30;
+            while (!pathExists) {
+                obstacles.length = 0; // Clear any existing obstacles
+                const numberOfObstacles = 6; // Six obstacles as per your request
 
-            for (let i = 0; i < numberOfObstacles; i++) {
-                const obstacle = {
-                    width: 0,
-                    height: 0,
-                    x: 0,
-                    y: 0
-                };
+                const MIN_LENGTH = 100;
+                const MAX_LENGTH = 200;
+                const MIN_WIDTH = 20;
+                const MAX_WIDTH = 30;
 
-                const isHorizontal = Math.random() < 0.5;
+                for (let i = 0; i < numberOfObstacles; i++) {
+                    const obstacle = {
+                        width: 0,
+                        height: 0,
+                        x: 0,
+                        y: 0
+                    };
 
-                if (isHorizontal) {
-                    obstacle.width = MIN_LENGTH + Math.random() * (MAX_LENGTH - MIN_LENGTH);
-                    obstacle.height = MIN_WIDTH + Math.random() * (MAX_WIDTH - MIN_WIDTH);
-                } else {
-                    obstacle.width = MIN_WIDTH + Math.random() * (MAX_WIDTH - MIN_WIDTH);
-                    obstacle.height = MIN_LENGTH + Math.random() * (MAX_LENGTH - MIN_LENGTH);
-                }
+                    const isHorizontal = Math.random() < 0.5;
 
-                let placed = false;
-                while (!placed) {
-                    obstacle.x = Math.random() * (canvas.width - obstacle.width);
-                    obstacle.y = Math.random() * (canvas.height - obstacle.height);
-
-                    if (
-                        !isColliding(obstacle, {
-                            x: player.x,
-                            y: player.y,
-                            width: player.size,
-                            height: player.size
-                        }) &&
-                        !isRectCircleColliding(obstacle, gate) &&
-                        !obstacles.some(existingObstacle => isColliding(obstacle, existingObstacle))
-                    ) {
-                        placed = true;
+                    if (isHorizontal) {
+                        obstacle.width = MIN_LENGTH + Math.random() * (MAX_LENGTH - MIN_LENGTH);
+                        obstacle.height = MIN_WIDTH + Math.random() * (MAX_WIDTH - MIN_WIDTH);
+                    } else {
+                        obstacle.width = MIN_WIDTH + Math.random() * (MAX_WIDTH - MIN_WIDTH);
+                        obstacle.height = MIN_LENGTH + Math.random() * (MAX_LENGTH - MIN_LENGTH);
                     }
+
+                    let placed = false;
+                    let attempts = 0;
+                    while (!placed && attempts < 100) {
+                        obstacle.x = Math.random() * (canvas.width - obstacle.width);
+                        obstacle.y = Math.random() * (canvas.height - obstacle.height);
+
+                        if (
+                            !isColliding(obstacle, {
+                                x: player.x,
+                                y: player.y,
+                                width: player.size,
+                                height: player.size
+                            }) &&
+                            !isRectCircleColliding(obstacle, gate) &&
+                            !obstacles.some(existingObstacle => isColliding(obstacle, existingObstacle))
+                        ) {
+                            placed = true;
+                        }
+                        attempts++;
+                    }
+
+                    obstacles.push(obstacle);
                 }
 
-                obstacles.push(obstacle);
+                // Check if a path exists
+                pathExists = isPathAvailable();
+                // If no path exists, the loop will run again to regenerate obstacles
             }
         }
+
 
         // Initialize enemies with random positions and speeds
         function initEnemies(numEnemies) {
@@ -610,6 +621,88 @@
             showingLevelCleared = false;
             startLevel();
         }
+
+        // Function to check if there's a path from the player to the gate
+        function isPathAvailable() {
+            const gridSize = 20; // Adjust the grid size as needed
+            const cols = Math.floor(canvas.width / gridSize);
+            const rows = Math.floor(canvas.height / gridSize);
+
+            // Create a grid representation of the obstacles
+            const grid = [];
+            for (let y = 0; y < rows; y++) {
+                grid[y] = [];
+                for (let x = 0; x < cols; x++) {
+                    grid[y][x] = 0; // Initialize as empty
+                }
+            }
+
+            // Mark obstacles on the grid
+            obstacles.forEach(obstacle => {
+                const startX = Math.floor(obstacle.x / gridSize);
+                const startY = Math.floor(obstacle.y / gridSize);
+                const endX = Math.floor((obstacle.x + obstacle.width) / gridSize);
+                const endY = Math.floor((obstacle.y + obstacle.height) / gridSize);
+
+                for (let y = startY; y <= endY && y < rows; y++) {
+                    for (let x = startX; x <= endX && x < cols; x++) {
+                        grid[y][x] = 1; // Mark as obstacle
+                    }
+                }
+            });
+
+            // BFS to find a path from player to gate
+            const queue = [];
+            const visited = [];
+
+            for (let y = 0; y < rows; y++) {
+                visited[y] = [];
+                for (let x = 0; x < cols; x++) {
+                    visited[y][x] = false;
+                }
+            }
+
+            const startX = Math.floor((player.x + player.size / 2) / gridSize);
+            const startY = Math.floor((player.y + player.size / 2) / gridSize);
+            const gateX = Math.floor(gate.x / gridSize);
+            const gateY = Math.floor(gate.y / gridSize);
+
+            queue.push({ x: startX, y: startY });
+            visited[startY][startX] = true;
+
+            const directions = [
+                { x: 0, y: -1 }, // Up
+                { x: 1, y: 0 },  // Right
+                { x: 0, y: 1 },  // Down
+                { x: -1, y: 0 }  // Left
+            ];
+
+            while (queue.length > 0) {
+                const current = queue.shift();
+
+                if (current.x === gateX && current.y === gateY) {
+                    return true; // Path found
+                }
+
+                for (let i = 0; i < directions.length; i++) {
+                    const nextX = current.x + directions[i].x;
+                    const nextY = current.y + directions[i].y;
+
+                    if (
+                        nextX >= 0 && nextX < cols &&
+                        nextY >= 0 && nextY < rows &&
+                        !visited[nextY][nextX] &&
+                        grid[nextY][nextX] === 0
+                    ) {
+                        visited[nextY][nextX] = true;
+                        queue.push({ x: nextX, y: nextY });
+                    }
+                }
+            }
+
+            return false; // No path found
+        }
+
 
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),

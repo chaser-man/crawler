@@ -84,7 +84,7 @@
             gate.y = gate.radius + 10;
 
             initObstacles();
-            initEnemies(3 + (level - 1));
+            initEnemies(15);
         }
 
         function levelCleared() {
@@ -164,7 +164,7 @@
         }
 
         function isPathAvailable() {
-            const gridSize = 20;
+            const gridSize = 10;
             const cols = Math.floor(canvas.width / gridSize);
             const rows = Math.floor(canvas.height / gridSize);
 
@@ -204,12 +204,13 @@
             const gateX = Math.floor(gate.x / gridSize);
             const gateY = Math.floor(gate.y / gridSize);
 
-            // Ensure start and gate positions are within grid bounds
             if (
                 startX < 0 || startX >= cols ||
                 startY < 0 || startY >= rows ||
                 gateX < 0 || gateX >= cols ||
-                gateY < 0 || gateY >= rows
+                gateY < 0 || gateY >= rows ||
+                grid[startY][startX] === 1 ||
+                grid[gateY][gateX] === 1
             ) {
                 return false;
             }
@@ -691,6 +692,7 @@
             player.dx = 0;
             player.dy = 0;
         });
+
     </script>
 </body>
 </html>

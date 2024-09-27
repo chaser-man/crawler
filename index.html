@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spider and Bats Game (Exit Version)</title>
+    <title>Spider and Bats Game (Glowing Portal Version)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Reset default margin and prevent scrolling */
@@ -60,12 +60,11 @@
             dy: 0
         };
 
-        // Exit (Gate) object
-        const exit = {
+        // Portal object
+        const portal = {
             x: 0,
             y: 0,
-            width: 60,
-            height: 80
+            radius: 40
         };
 
         // Obstacles array
@@ -91,9 +90,9 @@
             player.dx = 0;
             player.dy = 0;
 
-            // Place the exit at a random position along the top of the screen
-            exit.x = Math.random() * (canvas.width - exit.width);
-            exit.y = 10; // Slight offset from the top edge
+            // Place the portal at a random position along the top of the screen
+            portal.x = Math.random() * (canvas.width - portal.radius * 2) + portal.radius;
+            portal.y = portal.radius + 10; // Slight offset from the top edge
 
             initObstacles();
             initEnemies(3 + (level - 1)); // Start with 3 enemies and add one per level
@@ -156,7 +155,7 @@
                             width: player.size,
                             height: player.size
                         }) &&
-                        !isColliding(obstacle, exit) &&
+                        !isCollidingWithPortal(obstacle) &&
                         !obstacles.some(existingObstacle => isColliding(obstacle, existingObstacle))
                     ) {
                         placed = true;
@@ -196,7 +195,7 @@
                     if (
                         !isCollidingWithObstacles(enemy.x, enemy.y, enemy.size) &&
                         !isCollidingWithPlayer(enemy) &&
-                        !isColliding(enemy, exit) &&
+                        !isCollidingWithPortal(enemy) &&
                         !enemies.some(existingEnemy => isColliding(enemy, existingEnemy))
                     ) {
                         placed = true;
@@ -218,7 +217,7 @@
                 updateEnemies();
                 drawObstacles();
                 drawEnemies();
-                drawExit();
+                drawPortal();
                 drawPlayer();
                 drawHUD();
             }
@@ -242,30 +241,32 @@
             ctx.fillText('Level Cleared!', canvas.width / 2, canvas.height / 2);
         }
 
-        // Function to draw the exit
-        function drawExit() {
-            const centerX = exit.x + exit.width / 2;
-            const centerY = exit.y + exit.height / 2;
+        // Function to draw the glowing purple portal
+        function drawPortal() {
+            const centerX = portal.x;
+            const centerY = portal.y;
+            const outerRadius = portal.radius;
+            const innerRadius = portal.radius * 0.7;
 
-            // Draw door frame
-            ctx.fillStyle = '#8B4513'; // Brown color for the frame
-            ctx.fillRect(exit.x, exit.y, exit.width, exit.height);
+            // Create radial gradient for the glow effect
+            const gradient = ctx.createRadialGradient(
+                centerX, centerY, innerRadius,
+                centerX, centerY, outerRadius
+            );
+            gradient.addColorStop(0, 'rgba(128, 0, 128, 1)'); // Solid purple at the center
+            gradient.addColorStop(1, 'rgba(128, 0, 128, 0)'); // Transparent at the edges
 
-            // Draw doorway (arch)
-            ctx.fillStyle = '#000'; // Black color for the doorway
+            // Draw the outer glow
+            ctx.fillStyle = gradient;
             ctx.beginPath();
-            ctx.moveTo(exit.x, exit.y + exit.height);
-            ctx.lineTo(exit.x, exit.y + exit.height / 2);
-            ctx.arc(centerX, exit.y + exit.height / 2, exit.width / 2, Math.PI, 0, false);
-            ctx.lineTo(exit.x + exit.width, exit.y + exit.height);
-            ctx.closePath();
+            ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
             ctx.fill();
 
-            // Draw "EXIT" sign above the door
-            ctx.fillStyle = '#FFFFFF'; // White color for text
-            ctx.font = '16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('EXIT', centerX, exit.y - 5);
+            // Draw the inner portal circle
+            ctx.fillStyle = 'rgba(75, 0, 130, 1)'; // Indigo color for the portal center
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         // Function to draw the player (spider with legs and eyes)
@@ -445,8 +446,8 @@
             // Check collision with enemies
             checkCollisionWithEnemies();
 
-            // Check if player reached the exit
-            checkCollisionWithExit();
+            // Check if player reached the portal
+            checkCollisionWithPortal(player);
         }
 
         // Function to update enemies
@@ -543,18 +544,61 @@
             });
         }
 
-        // Function to check if player reached the exit
-        function checkCollisionWithExit() {
-            const playerRect = {
-                x: player.x,
-                y: player.y,
-                width: player.size,
-                height: player.size
+        // Function to check if player reached the portal
+        function checkCollisionWithPortal(entity) {
+            const dx = (entity.x + entity.size / 2) - portal.x;
+            const dy = (entity.y + entity.size / 2) - portal.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < portal.radius + entity.size / 2) {
+                if (entity === player) {
+                    levelCleared();
+                } else {
+                    // For enemies, do nothing
+                }
+            }
+        }
+
+        // Function to check collision with portal (for obstacles and enemies)
+        function isCollidingWithPortal(entity) {
+            const rect = {
+                x: entity.x,
+                y: entity.y,
+                width: entity.width || entity.size,
+                height: entity.height || entity.size
             };
 
-            if (isColliding(playerRect, exit)) {
-                levelCleared();
+            const circle = {
+                x: portal.x,
+                y: portal.y,
+                radius: portal.radius
+            };
+
+            return rectCircleColliding(rect, circle);
+        }
+
+        // Function to check collision between rectangle and circle
+        function rectCircleColliding(rect, circle) {
+            const distX = Math.abs(circle.x - rect.x - rect.width / 2);
+            const distY = Math.abs(circle.y - rect.y - rect.height / 2);
+
+            if (distX > (rect.width / 2 + circle.radius)) {
+                return false;
             }
+            if (distY > (rect.height / 2 + circle.radius)) {
+                return false;
+            }
+
+            if (distX <= (rect.width / 2)) {
+                return true;
+            }
+            if (distY <= (rect.height / 2)) {
+                return true;
+            }
+
+            const dx = distX - rect.width / 2;
+            const dy = distY - rect.height / 2;
+            return (dx * dx + dy * dy <= (circle.radius * circle.radius));
         }
 
         // Function to handle game over

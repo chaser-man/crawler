@@ -121,7 +121,7 @@
                         y: 0
                     };
 
-                    const isHorizontal = Math.random() < 0.25;//originally 0.5
+                    const isHorizontal = Math.random() < 0.5;
 
                     if (isHorizontal) {
                         obstacle.width = MIN_LENGTH + Math.random() * (MAX_LENGTH - MIN_LENGTH);
@@ -152,7 +152,11 @@
                         attempts++;
                     }
 
-                    obstacles.push(obstacle);
+                    if (placed) {
+                        obstacles.push(obstacle);
+                    } else {
+                        console.warn('Could not place obstacle after 100 attempts.');
+                    }
                 }
 
                 pathExists = isPathAvailable();
@@ -199,6 +203,16 @@
             const startY = Math.floor((player.y + player.size / 2) / gridSize);
             const gateX = Math.floor(gate.x / gridSize);
             const gateY = Math.floor(gate.y / gridSize);
+
+            // Ensure start and gate positions are within grid bounds
+            if (
+                startX < 0 || startX >= cols ||
+                startY < 0 || startY >= rows ||
+                gateX < 0 || gateX >= cols ||
+                gateY < 0 || gateY >= rows
+            ) {
+                return false;
+            }
 
             queue.push({ x: startX, y: startY });
             visited[startY][startX] = true;
@@ -677,7 +691,6 @@
             player.dx = 0;
             player.dy = 0;
         });
-
     </script>
 </body>
 </html>

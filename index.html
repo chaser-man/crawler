@@ -55,7 +55,7 @@
             x: canvas.width / 2 - 15,
             y: canvas.height / 2 - 15,
             size: 30, // Adjusted size for better visibility
-            speed: 2,
+            speed: 3, // Increased speed from 2 to 3
             dx: 0,
             dy: 0
         };
@@ -237,12 +237,12 @@
 
             // Left side legs (4 legs)
             for (let i = 0; i < 4; i++) {
-                const angle = Math.PI / 2 + (i - 1.5) * (Math.PI / 12); // Adjust angles for left side legs
+                const angle = Math.PI + (i - 1.5) * (Math.PI / 8); // Adjust angles for left side legs
                 const legLength = radius + 10;
                 const startX = centerX + Math.cos(angle) * radius;
                 const startY = centerY + Math.sin(angle) * radius;
-                const controlX = centerX + Math.cos(angle) * (radius + 5);
-                const controlY = centerY + Math.sin(angle) * (radius + 5);
+                const controlX = centerX + Math.cos(angle) * (radius + 5) + Math.sin(angle) * 5;
+                const controlY = centerY + Math.sin(angle) * (radius + 5) - Math.cos(angle) * 5;
                 const endX = centerX + Math.cos(angle) * legLength;
                 const endY = centerY + Math.sin(angle) * legLength;
                 ctx.beginPath();
@@ -253,12 +253,12 @@
 
             // Right side legs (4 legs)
             for (let i = 0; i < 4; i++) {
-                const angle = -Math.PI / 2 + (i - 1.5) * (Math.PI / 12); // Adjust angles for right side legs
+                const angle = (i - 1.5) * (Math.PI / 8); // Adjust angles for right side legs
                 const legLength = radius + 10;
                 const startX = centerX + Math.cos(angle) * radius;
                 const startY = centerY + Math.sin(angle) * radius;
-                const controlX = centerX + Math.cos(angle) * (radius + 5);
-                const controlY = centerY + Math.sin(angle) * (radius + 5);
+                const controlX = centerX + Math.cos(angle) * (radius + 5) + Math.sin(angle) * -5;
+                const controlY = centerY + Math.sin(angle) * (radius + 5) - Math.cos(angle) * -5;
                 const endX = centerX + Math.cos(angle) * legLength;
                 const endY = centerY + Math.sin(angle) * legLength;
                 ctx.beginPath();

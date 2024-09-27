@@ -55,7 +55,7 @@
             x: 0,
             y: 0,
             size: 30,
-            speed: 4, // Speed set to 4
+            speed: 3.5, // Speed set to 4
             dx: 0,
             dy: 0
         };
@@ -241,8 +241,7 @@
             ctx.fillText('Level Cleared!', canvas.width / 2, canvas.height / 2);
         }
 
-        // Function to draw the gate (purple circle with shadow)
-        // Function to draw the gate (purple circle with blurry centered shadow)
+        // Function to draw the gate (purple circle with a more visible, blurry, centered shadow)
         function drawGate() {
             const centerX = gate.x + gate.size / 2;
             const centerY = gate.y;
@@ -250,19 +249,20 @@
             ctx.save(); // Save the current state
 
             // Set shadow properties
-            ctx.shadowColor = 'rgba(128, 0, 128, 0.5)'; // Semi-transparent purple shadow
-            ctx.shadowBlur = 15; // Amount of blur
+            ctx.shadowColor = 'rgba(255, 0, 255, 0.7)'; // More opaque magenta shadow
+            ctx.shadowBlur = 40; // Increased blur amount for a more noticeable shadow
             ctx.shadowOffsetX = 0; // Centered shadow
             ctx.shadowOffsetY = 0; // Centered shadow
 
             // Draw gate (purple circle)
             ctx.beginPath();
             ctx.arc(centerX, centerY, gate.size / 2, 0, Math.PI * 2);
-            ctx.fillStyle = '#800080'; // Solid purple color
+            ctx.fillStyle = '#DA70D6'; // Lighter purple color for the gate
             ctx.fill();
 
             ctx.restore(); // Restore the previous state
         }
+
 
         // Function to draw the player (spider with legs and eyes)
         function drawPlayer() {

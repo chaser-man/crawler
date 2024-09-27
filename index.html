@@ -87,17 +87,19 @@
 
             timeLeft = 10; // Reset timer
             initObstacles();
-            initEnemies(5 + (level - 1)); // Start with 5 enemies and add one per level
+            initEnemies(3 + (level - 1)); // Start with 3 enemies and add one per level
 
             // Start the countdown timer
             if (timerInterval) {
                 clearInterval(timerInterval);
             }
             timerInterval = setInterval(() => {
-                timeLeft--;
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    levelCleared();
+                if (!showingLevelCleared) {
+                    timeLeft--;
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        levelCleared();
+                    }
                 }
             }, 1000);
         }

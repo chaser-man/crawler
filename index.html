@@ -614,11 +614,10 @@
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),
             mode: 'static',
-            position: { right: '50px', bottom: '50px' }, // Exact positioning within the container
+            position: { right: '50px', bottom: '50px' }, // Exact position within the container
             color: 'white',
             size: 100
         };
-
 
         const joystick = nipplejs.create(joystickOptions);
 
@@ -634,10 +633,11 @@
             }
         });
 
-        joystick.on('end', function() {
-            player.dx = 0;
-            player.dy = 0;
-        });
+joystick.on('end', function() {
+    player.dx = 0;
+    player.dy = 0;
+});
+
 
     </script>
 </body>

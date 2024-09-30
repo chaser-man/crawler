@@ -274,6 +274,20 @@
                 enemies.push(enemy);
             }
         }
+        let flickerTimer = 0;
+        let flickerIntensity = 0.5;
+
+        function drawFlickeringLight() {
+            flickerTimer += 1;
+            if (flickerTimer % 60 === 0) { // Every second (assuming 60 FPS)
+                flickerIntensity = Math.random() * 0.5 + 0.3; // Random intensity between 0.3 and 0.8
+            }
+
+            ctx.fillStyle = `rgba(255, 255, 224, ${flickerIntensity})`; // Light yellowish glow
+            ctx.beginPath();
+            ctx.arc(gate.x, gate.y, gate.radius + 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         function gameLoop() {
             clearCanvas();
@@ -281,8 +295,8 @@
             if (showingLevelCleared) {
                 drawLevelClearedScreen();
             } else {
+                drawFlickeringLight();
                 drawBackground();
-                drawFog();
                 updatePlayerPosition();
                 updateEnemies();
                 drawOutline();
@@ -662,10 +676,7 @@
             showingLevelCleared = false;
             startLevel();
         }
-        function drawFog() {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        
 
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),

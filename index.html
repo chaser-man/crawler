@@ -93,8 +93,8 @@
                     x: Math.random() * (canvas.width - 100) + 50, // Avoid edges
                     y: Math.random() * (canvas.height - 100) + 50,
                     radius: Math.random() * 50 + 50, // Radius between 50 and 100
-                    baseOpacity: Math.random() * 0.3 + 0.2, // Opacity between 0.2 and 0.5
-                    flickerRange: Math.random() * 0.3 + 0.2 // Flicker range between 0.2 and 0.5
+                    baseOpacity: Math.random() * 0.2 + 0.1, // Opacity between 0.1 and 0.3
+                    flickerRange: Math.random() * 0.1 + 0.05 // Flicker range between 0.05 and 0.15
                 };
                 flickeringLights.push(light);
             }
@@ -511,8 +511,8 @@
                     light.y,
                     light.radius
                 );
-                gradient.addColorStop(0, `rgba(255, 255, 255, ${clampedFlicker})`); // Bright center
-                gradient.addColorStop(1, `rgba(255, 255, 255, 0)`); // Transparent edges
+                gradient.addColorStop(0, `rgba(128, 0, 128, ${clampedFlicker})`); // Purple center
+                gradient.addColorStop(1, `rgba(128, 0, 128, 0)`); // Transparent edges
 
                 // Draw the gradient
                 ctx.fillStyle = gradient;
@@ -880,21 +880,6 @@
                 particle.draw();
             });
         }
-
-        // Function to update and draw particles (alternative approach with removal)
-        /*
-        function updateAndDrawParticles() {
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                particles[i].draw();
-
-                // Optionally remove particles that are no longer needed
-                // if (particles[i].opacity <= 0) {
-                //     particles.splice(i, 1);
-                // }
-            }
-        }
-        */
     </script>
 </body>
 </html>

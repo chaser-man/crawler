@@ -336,11 +336,13 @@
                 drawGate();
                 drawPlayer();
                 drawHUD();
-                drawFlickeringLights(); // Draw flickering lights last
+                drawFlickeringLights(); // Draw flickering lights
+                drawFog(); // Draw fog overlay
             }
 
             requestAnimationFrame(gameLoop);
         }
+
 
         function drawOutline() {
             if (!isMobileDevice()) {
@@ -717,6 +719,18 @@
                 levelCleared();
             }
         }
+        function drawFog() {
+            const gradient = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 1.5
+            );
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0.15)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
 
         function isCollidingWithGate(enemy) {
             const enemyCircle = {

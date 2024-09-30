@@ -44,8 +44,8 @@
                 canvas.width = 375;
                 canvas.height = 667;
             }
-            // Update light positions if necessary
-            generateFlickeringLights();
+            // Do NOT generate flickering lights here to avoid multiple generations
+            // generateFlickeringLights();
         }
 
         resizeCanvas();
@@ -78,16 +78,16 @@
 
         // Function to generate flickering lights
         function generateFlickeringLights() {
-            flickeringLights = [];
-            const numberOfLights = 3 + Math.floor(Math.random() * 3); // 3 to 5 lights per level
+            flickeringLights = []; // Reset the array for the new level
+            const numberOfLights = 3; // Start with 3 lights
 
             for (let i = 0; i < numberOfLights; i++) {
                 const light = {
                     x: Math.random() * (canvas.width - 100) + 50, // Avoid edges
                     y: Math.random() * (canvas.height - 100) + 50,
                     radius: Math.random() * 50 + 50, // Radius between 50 and 100
-                    baseOpacity: Math.random() * 0.3 + 0.2, // Opacity between 0.2 and 0.5
-                    flickerRange: Math.random() * 0.3 + 0.2 // Flicker range between 0.2 and 0.5
+                    baseOpacity: 0.2, // Fixed base opacity
+                    flickerRange: 0.1 // Fixed flicker range
                 };
                 flickeringLights.push(light);
             }
@@ -390,10 +390,13 @@
         }
 
         function drawFlickeringLights() {
-            flickeringLights.forEach(light => {
+            flickeringLights.forEach((light, index) => {
                 // Calculate flickering opacity
                 const flicker = light.baseOpacity + (Math.random() * 2 - 1) * light.flickerRange;
-                const clampedFlicker = Math.min(Math.max(flicker, 0), 1); // Ensure opacity stays between 0 and 1
+                const clampedFlicker = Math.min(Math.max(flicker, 0), 1); // Ensure opacity is between 0 and 1
+
+                // Debugging: Log light properties
+                console.log(`Light ${index + 1}: x=${light.x.toFixed(2)}, y=${light.y.toFixed(2)}, radius=${light.radius.toFixed(2)}, opacity=${clampedFlicker.toFixed(2)}`);
 
                 // Create radial gradient
                 const gradient = ctx.createRadialGradient(
@@ -412,6 +415,15 @@
                 ctx.beginPath();
                 ctx.arc(light.x, light.y, light.radius, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Temporary: Draw a small red dot at the light's center for debugging
+                // Remove this after verifying
+                /*
+                ctx.fillStyle = '#FF0000';
+                ctx.beginPath();
+                ctx.arc(light.x, light.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                */
             });
         }
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spider and Bats Game (Spooky Enhancements)</title>
+    <title>Spider and Bats Game (Circular Gate with Shadow)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
@@ -53,7 +53,7 @@
             x: 0,
             y: 0,
             size: 30,
-            speed: 3.5,
+            speed: 4,
             dx: 0,
             dy: 0
         };
@@ -71,25 +71,6 @@
         let showingLevelCleared = false;
         let levelClearedTimeout;
 
-        // Define light sources
-        const lights = [
-            {
-                x: canvas.width / 4,
-                y: canvas.height / 3,
-                radius: 100,
-                baseOpacity: 0.2,
-                flickerRange: 0.1
-            },
-            {
-                x: (canvas.width * 3) / 4,
-                y: (canvas.height * 2) / 3,
-                radius: 150,
-                baseOpacity: 0.15,
-                flickerRange: 0.05
-            },
-            // Add more lights as desired
-        ];
-
         startLevel();
         gameLoop();
 
@@ -103,7 +84,7 @@
             gate.y = gate.radius + 10;
 
             initObstacles();
-            initEnemies(3 + (level - 1)); // Starting with 3 enemies, increasing by 1 each level
+            initEnemies(1 + (level - 1));
         }
 
         function levelCleared() {
@@ -125,7 +106,7 @@
 
             while (!pathExists) {
                 obstacles.length = 0;
-                const numberOfObstacles = 6; // Set to 15 obstacles
+                const numberOfObstacles = 6;
 
                 const MIN_LENGTH = 100;
                 const MAX_LENGTH = 200;
@@ -171,11 +152,7 @@
                         attempts++;
                     }
 
-                    if (placed) {
-                        obstacles.push(obstacle);
-                    } else {
-                        console.warn('Could not place obstacle after 100 attempts.');
-                    }
+                    obstacles.push(obstacle);
                 }
 
                 pathExists = isPathAvailable();
@@ -183,7 +160,7 @@
         }
 
         function isPathAvailable() {
-            const gridSize = 20; // Increased grid size for better performance
+            const gridSize = 20;
             const cols = Math.floor(canvas.width / gridSize);
             const rows = Math.floor(canvas.height / gridSize);
 
@@ -223,30 +200,14 @@
             const gateX = Math.floor(gate.x / gridSize);
             const gateY = Math.floor(gate.y / gridSize);
 
-            // Ensure start and gate positions are within grid bounds and not blocked
-            if (
-                startX < 0 || startX >= cols ||
-                startY < 0 || startY >= rows ||
-                gateX < 0 || gateX >= cols ||
-                gateY < 0 || gateY >= rows ||
-                grid[startY][startX] === 1 ||
-                grid[gateY][gateX] === 1
-            ) {
-                return false;
-            }
-
             queue.push({ x: startX, y: startY });
             visited[startY][startX] = true;
 
             const directions = [
-                { x: 0, y: -1 }, // Up
-                { x: 1, y: 0 },  // Right
-                { x: 0, y: 1 },  // Down
-                { x: -1, y: 0 }, // Left
-                { x: 1, y: -1 }, // Up-Right
-                { x: 1, y: 1 },  // Down-Right
-                { x: -1, y: 1 }, // Down-Left
-                { x: -1, y: -1 } // Up-Left
+                { x: 0, y: -1 },
+                { x: 1, y: 0 },
+                { x: 0, y: 1 },
+                { x: -1, y: 0 }
             ];
 
             while (queue.length > 0) {
@@ -291,8 +252,7 @@
                 };
 
                 let placed = false;
-                let attempts = 0;
-                while (!placed && attempts < 100) {
+                while (!placed) {
                     enemy.x = Math.random() * (canvas.width - enemy.size);
                     enemy.y = Math.random() * ((canvas.height / 2) - enemy.size);
 
@@ -309,14 +269,9 @@
                     ) {
                         placed = true;
                     }
-                    attempts++;
                 }
 
-                if (placed) {
-                    enemies.push(enemy);
-                } else {
-                    console.warn('Could not place enemy after 100 attempts.');
-                }
+                enemies.push(enemy);
             }
         }
 
@@ -326,54 +281,18 @@
             if (showingLevelCleared) {
                 drawLevelClearedScreen();
             } else {
+                drawBackground();
                 updatePlayerPosition();
                 updateEnemies();
-                drawBackground();
                 drawOutline();
                 drawObstacles();
                 drawEnemies();
                 drawGate();
                 drawPlayer();
                 drawHUD();
-                drawFlickeringLights(); // Draw flickering lights last
             }
 
             requestAnimationFrame(gameLoop);
-        }
-
-        function drawBackground() {
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            gradient.addColorStop(0, '#000000'); // Black
-            gradient.addColorStop(1, '#2C0735'); // Dark purple
-
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function drawFlickeringLights() {
-            lights.forEach(light => {
-                // Calculate flickering opacity
-                const flicker = light.baseOpacity + (Math.random() * 2 - 1) * light.flickerRange;
-                const clampedFlicker = Math.min(Math.max(flicker, 0), 1); // Ensure opacity stays between 0 and 1
-
-                // Create radial gradient
-                const gradient = ctx.createRadialGradient(
-                    light.x,
-                    light.y,
-                    0,
-                    light.x,
-                    light.y,
-                    light.radius
-                );
-                gradient.addColorStop(0, `rgba(255, 255, 255, ${clampedFlicker})`); // Bright center
-                gradient.addColorStop(1, `rgba(255, 255, 255, 0)`); // Transparent edges
-
-                // Draw the gradient
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(light.x, light.y, light.radius, 0, Math.PI * 2);
-                ctx.fill();
-            });
         }
 
         function drawOutline() {
@@ -401,7 +320,7 @@
         function drawGate() {
             ctx.save();
 
-            ctx.shadowColor = 'rgba(128, 0, 128, 0.5)';
+            ctx.shadowColor = 'rgba(150, 44, 150)';//originally 128,0,128
             ctx.shadowBlur = 20;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
@@ -413,6 +332,16 @@
 
             ctx.restore();
         }
+        function drawBackground() {
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#000000'); // Black
+            gradient.addColorStop(1, '#2C0735'); // Dark purple
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+
 
         function drawPlayer() {
             const centerX = player.x + player.size / 2;
@@ -759,6 +688,7 @@
             player.dx = 0;
             player.dy = 0;
         });
+
     </script>
 </body>
 </html>

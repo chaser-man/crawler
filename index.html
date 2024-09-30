@@ -44,20 +44,25 @@
                 canvas.width = 375;
                 canvas.height = 667;
             }
-            // Do NOT generate flickering lights here to avoid multiple generations
-            // generateFlickeringLights();
         }
 
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
+        // Enhanced player object with separate input tracking
         const player = {
             x: 0,
             y: 0,
             size: 30,
-            speed: 4,
-            dx: 0,
-            dy: 0
+            speed: 4, // Base speed
+            keyboard: {
+                dx: 0,
+                dy: 0
+            },
+            joystick: {
+                dx: 0,
+                dy: 0
+            }
         };
 
         const gate = {
@@ -72,8 +77,76 @@
         let level = 1;
         let showingLevelCleared = false;
         let levelClearedTimeout;
-        let randomNumberColor = Math.floor(Math.random() * 3) + 1;
+        let randomNumberColor; // Global variable
 
+        // Define the keys for movement
+        const KEY_CODES = {
+            LEFT: ['ArrowLeft', 'a', 'A'],
+            RIGHT: ['ArrowRight', 'd', 'D'],
+            UP: ['ArrowUp', 'w', 'W'],
+            DOWN: ['ArrowDown', 's', 'S']
+        };
+
+        // Object to keep track of pressed keys
+        const keysPressed = {
+            left: false,
+            right: false,
+            up: false,
+            down: false
+        };
+
+        // Handle keydown events
+        function handleKeyDown(event) {
+            const key = event.key;
+            if (KEY_CODES.LEFT.includes(key)) {
+                keysPressed.left = true;
+                event.preventDefault(); // Prevent default action like scrolling
+            }
+            if (KEY_CODES.RIGHT.includes(key)) {
+                keysPressed.right = true;
+                event.preventDefault();
+            }
+            if (KEY_CODES.UP.includes(key)) {
+                keysPressed.up = true;
+                event.preventDefault();
+            }
+            if (KEY_CODES.DOWN.includes(key)) {
+                keysPressed.down = true;
+                event.preventDefault();
+            }
+        }
+
+        // Handle keyup events
+        function handleKeyUp(event) {
+            const key = event.key;
+            if (KEY_CODES.LEFT.includes(key)) {
+                keysPressed.left = false;
+                event.preventDefault();
+            }
+            if (KEY_CODES.RIGHT.includes(key)) {
+                keysPressed.right = false;
+                event.preventDefault();
+            }
+            if (KEY_CODES.UP.includes(key)) {
+                keysPressed.up = false;
+                event.preventDefault();
+            }
+            if (KEY_CODES.DOWN.includes(key)) {
+                keysPressed.down = false;
+                event.preventDefault();
+            }
+        }
+
+        // Attach event listeners only if not on mobile
+        if (!isMobileDevice()) {
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+        }
+
+        // Helper function to get a random number between 1 and 3
+        function getRandomColorNumber() {
+            return Math.floor(Math.random() * 3) + 1; // Returns 1, 2, or 3
+        }
 
         // Array to hold flickering lights
         let flickeringLights = [];
@@ -101,8 +174,10 @@
         function startLevel() {
             player.x = Math.random() * (canvas.width - player.size);
             player.y = canvas.height - player.size - 10;
-            player.dx = 0;
-            player.dy = 0;
+            player.keyboard.dx = 0;
+            player.keyboard.dy = 0;
+            player.joystick.dx = 0;
+            player.joystick.dy = 0;
 
             gate.x = Math.random() * (canvas.width - gate.radius * 2) + gate.radius;
             gate.y = gate.radius + 10;
@@ -111,6 +186,10 @@
             initEnemies(1 + (level - 1));
 
             generateFlickeringLights(); // Generate new flickering lights for the level
+
+            // Assign a new random color for the background
+            randomNumberColor = getRandomColorNumber();
+            console.log("New Round Color Number:", randomNumberColor); // Debugging
         }
 
         function levelCleared() {
@@ -299,7 +378,7 @@
                     enemy.x = Math.random() * (canvas.width - enemy.size);
                     enemy.y = Math.random() * ((canvas.height / 2) - enemy.size);
 
-                    const speed = minEnemySpeed + Math.random() * (maxEnemySpeed - minEnemySpeed);
+                    const speed = Math.random() * (maxEnemySpeed - minEnemySpeed) + minEnemySpeed;
                     const angle = Math.random() * 2 * Math.PI;
                     enemy.dx = Math.cos(angle) * speed;
                     enemy.dy = Math.sin(angle) * speed;
@@ -385,16 +464,25 @@
         }
 
         function drawBackground() {
+            // Create a linear gradient for the background
             const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            gradient.addColorStop(0, '#000000'); // Blacklet randomNumber = Math.floor(Math.random() * 2) + 1;
-            if (randomNumberColor === 1){
+            
+            // Define the starting color stop (you can customize this)
+            gradient.addColorStop(0, '#000000'); // Black or any other base color
+
+            // Use randomNumberColor to set the second color stop
+            if (randomNumberColor === 1) {
                 gradient.addColorStop(1, '#4f0000'); // Dark red
-            } else if(randomNumberColor === 2){
+                console.log("Background Color: Dark Red");
+            } else if (randomNumberColor === 2) {
                 gradient.addColorStop(1, '#2f3626'); // Dark green
-            }else{
+                console.log("Background Color: Dark Green");
+            } else {
                 gradient.addColorStop(1, '#291045'); // Dark purple  
+                console.log("Background Color: Dark Purple");
             }
 
+            // Apply the gradient as the fill style and draw the background
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
@@ -425,15 +513,6 @@
                 ctx.beginPath();
                 ctx.arc(light.x, light.y, light.radius, 0, Math.PI * 2);
                 ctx.fill();
-
-                // Temporary: Draw a small red dot at the light's center for debugging
-                // Remove this after verifying
-                /*
-                ctx.fillStyle = '#FF0000';
-                ctx.beginPath();
-                ctx.arc(light.x, light.y, 5, 0, Math.PI * 2);
-                ctx.fill();
-                */
             });
         }
 
@@ -575,25 +654,56 @@
         }
 
         function updatePlayerPosition() {
-            let newX = player.x + player.dx;
-            let newY = player.y + player.dy;
+            // Reset keyboard directional vectors
+            player.keyboard.dx = 0;
+            player.keyboard.dy = 0;
 
-            if (!isCollidingWithObstacles(newX, player.y, player.size)) {
-                player.x = newX;
-            } else {
-                player.dx = 0;
+            // Update keyboard directional vectors based on pressed keys
+            if (keysPressed.left) {
+                player.keyboard.dx -= 1;
             }
-            if (!isCollidingWithObstacles(player.x, newY, player.size)) {
-                player.y = newY;
-            } else {
-                player.dy = 0;
+            if (keysPressed.right) {
+                player.keyboard.dx += 1;
+            }
+            if (keysPressed.up) {
+                player.keyboard.dy -= 1;
+            }
+            if (keysPressed.down) {
+                player.keyboard.dy += 1;
             }
 
-            if (player.x < 0) player.x = 0;
-            if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
-            if (player.y < 0) player.y = 0;
-            if (player.y > canvas.height - player.size) player.y = canvas.height - player.size;
+            // Calculate the sum of keyboard and joystick inputs
+            let moveX = player.keyboard.dx + player.joystick.dx;
+            let moveY = player.keyboard.dy + player.joystick.dy;
 
+            // Calculate the length of the movement vector
+            const length = Math.sqrt(moveX * moveX + moveY * moveY);
+
+            if (length > 0) {
+                // Normalize the movement vector and scale by player's speed
+                moveX = (moveX / length) * player.speed;
+                moveY = (moveY / length) * player.speed;
+
+                // Calculate potential new positions
+                let newX = player.x + moveX;
+                let newY = player.y + moveY;
+
+                // Collision Detection
+                if (!isCollidingWithObstacles(newX, player.y, player.size)) {
+                    player.x = newX;
+                }
+                if (!isCollidingWithObstacles(player.x, newY, player.size)) {
+                    player.y = newY;
+                }
+
+                // Boundary Constraints
+                if (player.x < 0) player.x = 0;
+                if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
+                if (player.y < 0) player.y = 0;
+                if (player.y > canvas.height - player.size) player.y = canvas.height - player.size;
+            }
+
+            // Check for collisions
             checkCollisionWithEnemies();
             checkCollisionWithGate();
         }
@@ -727,6 +837,7 @@
                 levelCleared();
             }
         }
+
         function drawFog() {
             const gradient = ctx.createRadialGradient(
                 canvas.width / 2, canvas.height / 2, 0,
@@ -785,18 +896,23 @@
                 const angle = data.angle.radian;
                 const distance = data.distance;
 
-                player.dx = Math.cos(angle) * player.speed * (distance / joystickOptions.size);
-                player.dy = Math.sin(angle) * player.speed * (distance / joystickOptions.size);
+                // Calculate joystick input as a normalized vector scaled by the distance
+                const maxDistance = joystickOptions.size;
+                const normalizedDistance = Math.min(distance, maxDistance) / maxDistance; // Clamp between 0 and 1
 
-                player.dy = -player.dy;
+                player.joystick.dx = Math.cos(angle) * normalizedDistance;
+                player.joystick.dy = Math.sin(angle) * normalizedDistance;
+
+                // Invert dy to align with canvas Y-axis
+                player.joystick.dy = -player.joystick.dy;
             }
         });
 
         joystick.on('end', function() {
-            player.dx = 0;
-            player.dy = 0;
+            // Reset joystick movement when not active
+            player.joystick.dx = 0;
+            player.joystick.dy = 0;
         });
-
     </script>
 </body>
 </html>

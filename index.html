@@ -282,6 +282,7 @@
                 drawLevelClearedScreen();
             } else {
                 drawBackground();
+                drawFog();
                 updatePlayerPosition();
                 updateEnemies();
                 drawOutline();
@@ -660,6 +661,10 @@
             level = 1;
             showingLevelCleared = false;
             startLevel();
+        }
+        function drawFog() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
         const joystickOptions = {

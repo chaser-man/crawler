@@ -72,6 +72,8 @@
         let level = 1;
         let showingLevelCleared = false;
         let levelClearedTimeout;
+        let randomNumberColor = Math.floor(Math.random() * 3) + 1;
+
 
         // Array to hold flickering lights
         let flickeringLights = [];
@@ -384,8 +386,14 @@
 
         function drawBackground() {
             const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            gradient.addColorStop(0, '#000000'); // Black
-            gradient.addColorStop(1, '#2C0735'); // Dark purple
+            gradient.addColorStop(0, '#000000'); // Blacklet randomNumber = Math.floor(Math.random() * 2) + 1;
+            if (randomNumberColor === 1){
+                gradient.addColorStop(1, '#4f0000'); // Dark red
+            } else if(randomNumberColor === 2){
+                gradient.addColorStop(1, '#2f3626'); // Dark green
+            }else{
+                gradient.addColorStop(1, '#291045'); // Dark purple  
+            }
 
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);

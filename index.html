@@ -44,6 +44,8 @@
                 canvas.width = 375;
                 canvas.height = 667;
             }
+            // Update light positions if necessary
+            generateFlickeringLights();
         }
 
         resizeCanvas();
@@ -71,6 +73,26 @@
         let showingLevelCleared = false;
         let levelClearedTimeout;
 
+        // Array to hold flickering lights
+        let flickeringLights = [];
+
+        // Function to generate flickering lights
+        function generateFlickeringLights() {
+            flickeringLights = [];
+            const numberOfLights = 3 + Math.floor(Math.random() * 3); // 3 to 5 lights per level
+
+            for (let i = 0; i < numberOfLights; i++) {
+                const light = {
+                    x: Math.random() * (canvas.width - 100) + 50, // Avoid edges
+                    y: Math.random() * (canvas.height - 100) + 50,
+                    radius: Math.random() * 50 + 50, // Radius between 50 and 100
+                    baseOpacity: Math.random() * 0.3 + 0.2, // Opacity between 0.2 and 0.5
+                    flickerRange: Math.random() * 0.3 + 0.2 // Flicker range between 0.2 and 0.5
+                };
+                flickeringLights.push(light);
+            }
+        }
+
         startLevel();
         gameLoop();
 
@@ -85,6 +107,8 @@
 
             initObstacles();
             initEnemies(1 + (level - 1));
+
+            generateFlickeringLights(); // Generate new flickering lights for the level
         }
 
         function levelCleared() {
@@ -152,7 +176,11 @@
                         attempts++;
                     }
 
-                    obstacles.push(obstacle);
+                    if (placed) {
+                        obstacles.push(obstacle);
+                    } else {
+                        console.warn('Could not place obstacle after 100 attempts.');
+                    }
                 }
 
                 pathExists = isPathAvailable();
@@ -199,6 +227,18 @@
             const startY = Math.floor((player.y + player.size / 2) / gridSize);
             const gateX = Math.floor(gate.x / gridSize);
             const gateY = Math.floor(gate.y / gridSize);
+
+            // Ensure start and gate positions are within grid bounds and not blocked
+            if (
+                startX < 0 || startX >= cols ||
+                startY < 0 || startY >= rows ||
+                gateX < 0 || gateX >= cols ||
+                gateY < 0 || gateY >= rows ||
+                grid[startY][startX] === 1 ||
+                grid[gateY][gateX] === 1
+            ) {
+                return false;
+            }
 
             queue.push({ x: startX, y: startY });
             visited[startY][startX] = true;
@@ -252,7 +292,8 @@
                 };
 
                 let placed = false;
-                while (!placed) {
+                let attempts = 0;
+                while (!placed && attempts < 100) { // Added attempts limiter
                     enemy.x = Math.random() * (canvas.width - enemy.size);
                     enemy.y = Math.random() * ((canvas.height / 2) - enemy.size);
 
@@ -269,9 +310,14 @@
                     ) {
                         placed = true;
                     }
+                    attempts++;
                 }
 
-                enemies.push(enemy);
+                if (placed) {
+                    enemies.push(enemy);
+                } else {
+                    console.warn('Could not place enemy after 100 attempts.');
+                }
             }
         }
 
@@ -290,6 +336,7 @@
                 drawGate();
                 drawPlayer();
                 drawHUD();
+                drawFlickeringLights(); // Draw flickering lights last
             }
 
             requestAnimationFrame(gameLoop);
@@ -320,7 +367,7 @@
         function drawGate() {
             ctx.save();
 
-            ctx.shadowColor = 'rgba(150, 44, 150)';//originally 128,0,128
+            ctx.shadowColor = 'rgba(150, 44, 150, 0.7)'; // Adjusted for better visibility
             ctx.shadowBlur = 20;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
@@ -332,6 +379,7 @@
 
             ctx.restore();
         }
+
         function drawBackground() {
             const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
             gradient.addColorStop(0, '#000000'); // Black
@@ -341,7 +389,31 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
+        function drawFlickeringLights() {
+            flickeringLights.forEach(light => {
+                // Calculate flickering opacity
+                const flicker = light.baseOpacity + (Math.random() * 2 - 1) * light.flickerRange;
+                const clampedFlicker = Math.min(Math.max(flicker, 0), 1); // Ensure opacity stays between 0 and 1
 
+                // Create radial gradient
+                const gradient = ctx.createRadialGradient(
+                    light.x,
+                    light.y,
+                    0,
+                    light.x,
+                    light.y,
+                    light.radius
+                );
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${clampedFlicker})`); // Bright center
+                gradient.addColorStop(1, `rgba(255, 255, 255, 0)`); // Transparent edges
+
+                // Draw the gradient
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(light.x, light.y, light.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
 
         function drawPlayer() {
             const centerX = player.x + player.size / 2;
@@ -356,6 +428,7 @@
             ctx.strokeStyle = '#808080';
             ctx.lineWidth = 2;
 
+            // Draw legs or other features
             for (let i = 0; i < 4; i++) {
                 const angle = Math.PI + (i - 1.5) * (Math.PI / 8);
                 const legLength = radius + 10;
@@ -386,6 +459,7 @@
                 ctx.stroke();
             }
 
+            // Draw eyes
             ctx.fillStyle = '#FFFFFF';
             const eyeOffsetX = radius / 2.5;
             const eyeOffsetY = radius / 4;

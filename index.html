@@ -23,6 +23,7 @@
             height: 150px;
         }
     </style>
+    <!-- NippleJS for joystick controls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.min.js"></script>
 </head>
 <body>
@@ -32,10 +33,12 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
+        // Detect mobile devices
         function isMobileDevice() {
             return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         }
 
+        // Resize canvas based on device
         function resizeCanvas() {
             if (isMobileDevice()) {
                 canvas.width = window.innerWidth;
@@ -44,13 +47,13 @@
                 canvas.width = 375;
                 canvas.height = 667;
             }
-            // Do NOT generate flickering lights here to avoid multiple generations
-            // generateFlickeringLights();
+            generateParticles(); // Regenerate particles on resize
         }
 
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
+        // Player object
         const player = {
             x: 0,
             y: 0,
@@ -60,6 +63,7 @@
             dy: 0
         };
 
+        // Gate object
         const gate = {
             x: 0,
             y: 0,
@@ -73,23 +77,103 @@
         let showingLevelCleared = false;
         let levelClearedTimeout;
 
-        // Array to hold flickering lights
-        let flickeringLights = [];
+        // Particle array
+        let particles = [];
 
-        // Function to generate flickering lights
-        function generateFlickeringLights() {
-            flickeringLights = []; // Reset the array for the new level
-            const numberOfLights = 3; // Start with 3 lights
+        // Particle class definition
+        class Particle {
+            constructor(type) {
+                this.type = type; // 'bat' or 'spider'
+                this.size = type === 'bat' ? 20 : 15;
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.speedX = (Math.random() - 0.5) * 2; // Horizontal speed
+                this.speedY = (Math.random() - 0.5) * 2; // Vertical speed
+                this.angle = Math.random() * Math.PI * 2;
+                this.angleSpeed = (Math.random() - 0.5) * 0.02;
+                this.opacity = Math.random() * 0.5 + 0.3; // Opacity between 0.3 and 0.8
+            }
 
-            for (let i = 0; i < numberOfLights; i++) {
-                const light = {
-                    x: Math.random() * (canvas.width - 100) + 50, // Avoid edges
-                    y: Math.random() * (canvas.height - 100) + 50,
-                    radius: Math.random() * 50 + 50, // Radius between 50 and 100
-                    baseOpacity: 0.2, // Fixed base opacity
-                    flickerRange: 0.1 // Fixed flicker range
-                };
-                flickeringLights.push(light);
+            update() {
+                // Update position
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Update angle for rotation effect
+                this.angle += this.angleSpeed;
+
+                // Wrap around the canvas edges
+                if (this.x < -this.size) this.x = canvas.width + this.size;
+                if (this.x > canvas.width + this.size) this.x = -this.size;
+                if (this.y < -this.size) this.y = canvas.height + this.size;
+                if (this.y > canvas.height + this.size) this.y = -this.size;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                if (this.type === 'bat') {
+                    // Draw bat shape
+                    ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                    ctx.beginPath();
+                    ctx.moveTo(-this.size / 2, 0);
+                    ctx.lineTo(0, -this.size / 2);
+                    ctx.lineTo(this.size / 2, 0);
+                    ctx.lineTo(0, this.size / 2);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Draw wings
+                    ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 0.7})`;
+                    ctx.beginPath();
+                    ctx.moveTo(-this.size / 2, 0);
+                    ctx.bezierCurveTo(-this.size, -this.size / 2, -this.size, this.size / 2, -this.size / 2, 0);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(this.size / 2, 0);
+                    ctx.bezierCurveTo(this.size, -this.size / 2, this.size, this.size / 2, this.size / 2, 0);
+                    ctx.fill();
+                } else if (this.type === 'spider') {
+                    // Draw spider body
+                    ctx.fillStyle = `rgba(255, 0, 0, ${this.opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Draw spider legs
+                    ctx.strokeStyle = `rgba(255, 0, 0, ${this.opacity})`;
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i < 8; i++) {
+                        const legAngle = i * (Math.PI / 4);
+                        const legLength = this.size;
+                        const endX = Math.cos(legAngle) * legLength;
+                        const endY = Math.sin(legAngle) * legLength;
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(endX, endY);
+                        ctx.stroke();
+                    }
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // Function to generate particles
+        function generateParticles() {
+            particles = [];
+            const numberOfBats = 10;
+            const numberOfSpiders = 5;
+
+            for (let i = 0; i < numberOfBats; i++) {
+                particles.push(new Particle('bat'));
+            }
+
+            for (let i = 0; i < numberOfSpiders; i++) {
+                particles.push(new Particle('spider'));
             }
         }
 
@@ -108,7 +192,7 @@
             initObstacles();
             initEnemies(1 + (level - 1));
 
-            generateFlickeringLights(); // Generate new flickering lights for the level
+            generateParticles(); // Generate new particles for the level
         }
 
         function levelCleared() {
@@ -244,10 +328,10 @@
             visited[startY][startX] = true;
 
             const directions = [
-                { x: 0, y: -1 },
-                { x: 1, y: 0 },
-                { x: 0, y: 1 },
-                { x: -1, y: 0 }
+                { x: 0, y: -1 }, // Up
+                { x: 1, y: 0 },  // Right
+                { x: 0, y: 1 },  // Down
+                { x: -1, y: 0 }  // Left
             ];
 
             while (queue.length > 0) {
@@ -330,13 +414,14 @@
                 drawBackground();
                 updatePlayerPosition();
                 updateEnemies();
+                updateParticles(); // Update particle positions
                 drawOutline();
                 drawObstacles();
                 drawEnemies();
                 drawGate();
                 drawPlayer();
                 drawHUD();
-                drawFlickeringLights(); // Draw flickering lights last
+                drawParticles(); // Draw particles
             }
 
             requestAnimationFrame(gameLoop);
@@ -389,41 +474,17 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        function drawFlickeringLights() {
-            flickeringLights.forEach((light, index) => {
-                // Calculate flickering opacity
-                const flicker = light.baseOpacity + (Math.random() * 2 - 1) * light.flickerRange;
-                const clampedFlicker = Math.min(Math.max(flicker, 0), 1); // Ensure opacity is between 0 and 1
+        // Update particle positions
+        function updateParticles() {
+            particles.forEach(particle => {
+                particle.update();
+            });
+        }
 
-                // Debugging: Log light properties
-                console.log(`Light ${index + 1}: x=${light.x.toFixed(2)}, y=${light.y.toFixed(2)}, radius=${light.radius.toFixed(2)}, opacity=${clampedFlicker.toFixed(2)}`);
-
-                // Create radial gradient
-                const gradient = ctx.createRadialGradient(
-                    light.x,
-                    light.y,
-                    0,
-                    light.x,
-                    light.y,
-                    light.radius
-                );
-                gradient.addColorStop(0, `rgba(255, 255, 255, ${clampedFlicker})`); // Bright center
-                gradient.addColorStop(1, `rgba(255, 255, 255, 0)`); // Transparent edges
-
-                // Draw the gradient
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(light.x, light.y, light.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Temporary: Draw a small red dot at the light's center for debugging
-                // Remove this after verifying
-                /*
-                ctx.fillStyle = '#FF0000';
-                ctx.beginPath();
-                ctx.arc(light.x, light.y, 5, 0, Math.PI * 2);
-                ctx.fill();
-                */
+        // Draw particles
+        function drawParticles() {
+            particles.forEach(particle => {
+                particle.draw();
             });
         }
 
@@ -533,6 +594,7 @@
                 ctx.lineTo(centerX, centerY - bodyHeight / 2);
                 ctx.fill();
 
+                // Draw eyes
                 ctx.fillStyle = '#FFFFFF';
                 const eyeOffsetX = bodyWidth / 4;
                 const eyeOffsetY = bodyHeight / 4;
@@ -748,6 +810,7 @@
             startLevel();
         }
 
+        // Initialize joystick controls using NippleJS
         const joystickOptions = {
             zone: document.getElementById('joystick-container'),
             mode: 'static',
@@ -763,9 +826,13 @@
                 const angle = data.angle.radian;
                 const distance = data.distance;
 
-                player.dx = Math.cos(angle) * player.speed * (distance / joystickOptions.size);
-                player.dy = Math.sin(angle) * player.speed * (distance / joystickOptions.size);
+                // Normalize distance to range [0,1]
+                const normalizedDistance = Math.min(distance / joystickOptions.size, 1);
 
+                player.dx = Math.cos(angle) * player.speed * normalizedDistance;
+                player.dy = Math.sin(angle) * player.speed * normalizedDistance;
+
+                // Invert y-axis for correct movement
                 player.dy = -player.dy;
             }
         });

@@ -1,17 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Spider and Bats Game (Circular Gate with Shadow)</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Link to external CSS -->
-    <link rel="stylesheet" type="text/css" href="styles.css">
-    <!-- Include nippleJS library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Your Game Title</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
+    <!-- Game Container -->
+    <div id="game-container">
+        <canvas id="gameCanvas" width="375" height="667"></canvas>
+    </div>
+
+    <!-- Joystick Container (for mobile devices) -->
     <div id="joystick-container"></div>
-    <!-- Include external JavaScript file -->
+
+    <!-- Include your game script -->
+    <script src="nipplejs.min.js"></script>
     <script src="game.js"></script>
 </body>
 </html>
+ 

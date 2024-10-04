@@ -1,26 +1,10 @@
 // game.js
 
-// Get the canvas and context
+// Game variables and initialization
+
+// Get the canvas and context (if not already obtained)
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
-// Function to check if the device is mobile
-function isMobileDevice() {
-    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
-
-// Resize canvas to fit the window or set fixed size for desktop
-function resizeCanvas() {
-    const container = document.getElementById('game-container');
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
-}
-
-
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
 
 // Enhanced player object with separate input tracking
 const player = {
@@ -46,13 +30,12 @@ const gate = {
 
 const obstacles = [];
 const enemies = [];
+let bat = null;
 
 let level = 1;
 let showingLevelCleared = false;
 let levelClearedTimeout;
-let randomNumberColor; // Global variable
-let bat = null;
-
+let randomNumberColor;
 
 // Define the keys for movement
 const KEY_CODES = {
@@ -70,7 +53,7 @@ const keysPressed = {
     down: false
 };
 
-// Handle keydown events
+// Event listeners for keyboard input
 function handleKeyDown(event) {
     const key = event.key;
     if (KEY_CODES.LEFT.includes(key)) {
@@ -91,7 +74,6 @@ function handleKeyDown(event) {
     }
 }
 
-// Handle keyup events
 function handleKeyUp(event) {
     const key = event.key;
     if (KEY_CODES.LEFT.includes(key)) {
@@ -118,11 +100,6 @@ if (!isMobileDevice()) {
     window.addEventListener('keyup', handleKeyUp);
 }
 
-// Helper function to get a random number between 1 and 3
-function getRandomColorNumber() {
-    return Math.floor(Math.random() * 3) + 1; // Returns 1, 2, or 3
-}
-
 // Array to hold flickering lights
 let flickeringLights = [];
 
@@ -143,10 +120,12 @@ function generateFlickeringLights() {
     }
 }
 
+// Start the game
 startLevel();
 gameLoop();
 
 function startLevel() {
+    // Initialize player position
     player.x = Math.random() * (canvas.width - player.size);
     player.y = canvas.height - player.size - 10;
     player.keyboard.dx = 0;
@@ -154,9 +133,11 @@ function startLevel() {
     player.joystick.dx = 0;
     player.joystick.dy = 0;
 
+    // Initialize gate position
     gate.x = Math.random() * (canvas.width - gate.radius * 2) + gate.radius;
     gate.y = gate.radius + 10;
 
+    // Initialize game elements
     initObstacles();
     initEnemies(level); // Initialize 'level' number of normal enemies
     initBat();          // Initialize the following bat
@@ -166,201 +147,31 @@ function startLevel() {
     randomNumberColor = getRandomColorNumber();
     console.log("New Round Color Number:", randomNumberColor);
 }
-function initBat() {
-    const batSize = 30; // Match enemy size
-    bat = {
-        x: 0,
-        y: 0,
-        size: batSize,
-        speed: 0.5
-    };
 
-    let placed = false;
-    let attempts = 0;
+function gameLoop() {
+    clearCanvas();
 
-    while (!placed && attempts < 100) {
-        bat.x = Math.random() * (canvas.width - bat.size);
-        bat.y = Math.random() * (canvas.height - bat.size);
-
-        if (
-            !isCollidingWithObstacles(bat.x, bat.y, bat.size) &&
-            !isCollidingWithPlayer(bat) &&
-            !isCollidingWithGate(bat) &&
-            !enemies.some(existingEnemy => isColliding(bat, existingEnemy))
-        ) {
-            placed = true;
-        }
-        attempts++;
+    if (showingLevelCleared) {
+        drawLevelClearedScreen();
+    } else {
+        drawBackground();
+        updatePlayerPosition();
+        updateEnemies();
+        updateBat();
+        drawOutline();
+        drawObstacles();
+        drawEnemies();
+        drawBat();
+        drawGate();
+        drawPlayer();
+        drawHUD();
+        drawFlickeringLights();
     }
 
-    if (!placed) {
-        console.warn('Could not place bat after 100 attempts.');
-    }
+    requestAnimationFrame(gameLoop);
 }
 
-function drawEnemy(enemy) {
-    const centerX = enemy.x + enemy.size / 2;
-    const centerY = enemy.y + enemy.size / 2;
-    const bodyWidth = enemy.size * 0.6;
-    const bodyHeight = enemy.size * 0.6;
-
-    ctx.save();
-
-    // Move to the center of the bat
-    ctx.translate(centerX, centerY);
-
-    // === Draw detailed bat wings (lifted higher) ===
-    ctx.fillStyle = '#4B2E83';
-
-    // Left wing
-    ctx.beginPath();
-    ctx.moveTo(-bodyWidth / 2, -bodyHeight * 0.3); // Lifted higher
-    ctx.lineTo(-bodyWidth * 1.6, -bodyHeight * 0.6); // Adjusted upward
-    ctx.lineTo(-bodyWidth * 1.3, bodyHeight * 0.1);
-    ctx.lineTo(-bodyWidth * 1.6, bodyHeight * 0.7);
-    ctx.lineTo(-bodyWidth / 2, bodyHeight * 0.5);
-    ctx.quadraticCurveTo(-bodyWidth * 0.9, bodyHeight * 0.0, -bodyWidth / 2, -bodyHeight * 0.3);
-    ctx.closePath();
-    ctx.fill();
-
-    // Right wing
-    ctx.beginPath();
-    ctx.moveTo(bodyWidth / 2, -bodyHeight * 0.3); // Lifted higher
-    ctx.lineTo(bodyWidth * 1.6, -bodyHeight * 0.6); // Adjusted upward
-    ctx.lineTo(bodyWidth * 1.3, bodyHeight * 0.1);
-    ctx.lineTo(bodyWidth * 1.6, bodyHeight * 0.7);
-    ctx.lineTo(bodyWidth / 2, bodyHeight * 0.5);
-    ctx.quadraticCurveTo(bodyWidth * 0.9, bodyHeight * 0.0, bodyWidth / 2, -bodyHeight * 0.3);
-    ctx.closePath();
-    ctx.fill();
-
-    // Draw wing membranes (details)
-    ctx.strokeStyle = '#2E1A47'; // Darker shade for wing details
-    ctx.lineWidth = 1;
-
-    // Left wing details
-    ctx.beginPath();
-    ctx.moveTo(-bodyWidth / 2, -bodyHeight * 0.3);
-    ctx.lineTo(-bodyWidth * 1.3, bodyHeight * 0.1);
-    ctx.moveTo(-bodyWidth / 2, -bodyHeight * 0.3);
-    ctx.lineTo(-bodyWidth * 1.2, bodyHeight * 0.3);
-    ctx.moveTo(-bodyWidth / 2, -bodyHeight * 0.3);
-    ctx.lineTo(-bodyWidth * 1.1, bodyHeight * 0.5);
-    ctx.stroke();
-
-    // Right wing details
-    ctx.beginPath();
-    ctx.moveTo(bodyWidth / 2, -bodyHeight * 0.3);
-    ctx.lineTo(bodyWidth * 1.3, bodyHeight * 0.1);
-    ctx.moveTo(bodyWidth / 2, -bodyHeight * 0.3);
-    ctx.lineTo(bodyWidth * 1.2, bodyHeight * 0.3);
-    ctx.moveTo(bodyWidth / 2, -bodyHeight * 0.3);
-    ctx.lineTo(bodyWidth * 1.1, bodyHeight * 0.5);
-    ctx.stroke();
-
-    // === Draw additional parts (arms) ===
-    ctx.fillStyle = '#4B2E83';
-
-    ctx.beginPath();
-    ctx.moveTo(-bodyWidth / 2, -bodyHeight * 0.1);
-    ctx.bezierCurveTo(
-        -bodyWidth * 1.2, bodyHeight * 0.1,
-        -bodyWidth * 1.2, bodyHeight * 0.9,
-        -bodyWidth / 2, bodyHeight * 1.0
-    );
-    ctx.lineTo(-bodyWidth / 2, bodyHeight * 0.6);
-    ctx.bezierCurveTo(
-        -bodyWidth * 0.8, bodyHeight * 0.7,
-        -bodyWidth * 0.8, bodyHeight * 0.3,
-        -bodyWidth / 2, bodyHeight * 0.1
-    );
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(bodyWidth / 2, -bodyHeight * 0.1);
-    ctx.bezierCurveTo(
-        bodyWidth * 1.2, bodyHeight * 0.1,
-        bodyWidth * 1.2, bodyHeight * 0.9,
-        bodyWidth / 2, bodyHeight * 1.0
-    );
-    ctx.lineTo(bodyWidth / 2, bodyHeight * 0.6);
-    ctx.bezierCurveTo(
-        bodyWidth * 0.8, bodyHeight * 0.7,
-        bodyWidth * 0.8, bodyHeight * 0.3,
-        bodyWidth / 2, bodyHeight * 0.1
-    );
-    ctx.closePath();
-    ctx.fill();
-
-    // === Draw bat body and facial features ===
-
-    // Draw bat body (ellipse)
-    ctx.fillStyle = '#4B2E83'; // Dark purple color for the bat body
-    ctx.beginPath();
-    ctx.ellipse(0, 0, bodyWidth / 2, bodyHeight / 2, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Draw bat head
-    ctx.beginPath();
-    ctx.ellipse(0, -bodyHeight * 0.6, bodyWidth * 0.4, bodyHeight * 0.4, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Draw bat ears
-    ctx.beginPath();
-    ctx.moveTo(-bodyWidth * 0.2, -bodyHeight * 0.9);
-    ctx.lineTo(-bodyWidth * 0.35, -bodyHeight * 1.2);
-    ctx.lineTo(0, -bodyHeight * 1.0);
-    ctx.lineTo(bodyWidth * 0.35, -bodyHeight * 1.2);
-    ctx.lineTo(bodyWidth * 0.2, -bodyHeight * 0.9);
-    ctx.closePath();
-    ctx.fill();
-
-    // Draw bat eyes
-    ctx.fillStyle = '#FFFFFF';
-    const eyeOffsetX = bodyWidth * 0.15;
-    const eyeOffsetY = -bodyHeight * 0.6;
-    const eyeRadius = bodyWidth * 0.08;
-    ctx.beginPath();
-    ctx.arc(-eyeOffsetX, eyeOffsetY, eyeRadius, 0, Math.PI * 2);
-    ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Draw pupils
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.arc(-eyeOffsetX, eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
-    ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Draw bat mouth and fangs
-    ctx.strokeStyle = '#FF0000';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-bodyWidth * 0.05, -bodyHeight * 0.5);
-    ctx.lineTo(0, -bodyHeight * 0.45);
-    ctx.lineTo(bodyWidth * 0.05, -bodyHeight * 0.5);
-    ctx.stroke();
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.moveTo(-bodyWidth * 0.02, -bodyHeight * 0.45);
-    ctx.lineTo(0, -bodyHeight * 0.4);
-    ctx.lineTo(bodyWidth * 0.02, -bodyHeight * 0.45);
-    ctx.fill();
-
-    ctx.restore();
-}
-
-
-
-
-
-
-
-
-
-
+// Game functions
 
 function levelCleared() {
     showingLevelCleared = true;
@@ -383,7 +194,7 @@ function initObstacles() {
     while (!pathExists) {
         obstacles.length = 0;
 
-        // Decide the number of obstacles based on the specified probabilities
+        // Decide the number of obstacles
         let numberOfObstacles;
         const randomChance = Math.random();
 
@@ -395,9 +206,7 @@ function initObstacles() {
             numberOfObstacles = 15;
         }
 
-        console.log(`Level ${level}, Attempt ${attempts + 1}: Generating ${numberOfObstacles} obstacles.`); // Debugging
-
-        // Obstacle sizes are always the same
+        // Obstacle sizes
         const MIN_LENGTH = 100;
         const MAX_LENGTH = 200;
         const MIN_WIDTH = 20;
@@ -477,8 +286,6 @@ function initObstacles() {
         }
         attempts++;
     }
-
-    console.log(`Level ${level}: Successfully generated a level with ${obstacles.length} obstacles after ${attempts} attempts.`);
 }
 
 function isPathAvailable() {
@@ -621,6 +428,38 @@ function initEnemies(numEnemies) {
     }
 }
 
+function initBat() {
+    const batSize = 30; // Match enemy size
+    bat = {
+        x: 0,
+        y: 0,
+        size: batSize,
+        speed: 0.5
+    };
+
+    let placed = false;
+    let attempts = 0;
+
+    while (!placed && attempts < 100) {
+        bat.x = Math.random() * (canvas.width - bat.size);
+        bat.y = Math.random() * (canvas.height - bat.size);
+
+        if (
+            !isCollidingWithObstacles(bat.x, bat.y, bat.size) &&
+            !isCollidingWithPlayer(bat) &&
+            !isCollidingWithGate(bat) &&
+            !enemies.some(existingEnemy => isColliding(bat, existingEnemy))
+        ) {
+            placed = true;
+        }
+        attempts++;
+    }
+
+    if (!placed) {
+        console.warn('Could not place bat after 100 attempts.');
+    }
+}
+
 function updateBat() {
     if (!bat) return;
 
@@ -649,9 +488,162 @@ function updateBat() {
         }
     }
 }
+
 function drawBat() {
     if (!bat) return;
     drawEnemy(bat);
+}
+
+function updateEnemies() {
+    enemies.forEach(enemy => {
+        let newEnemyX = enemy.x + enemy.dx;
+        let newEnemyY = enemy.y + enemy.dy;
+
+        if (newEnemyX <= 0 || newEnemyX >= canvas.width - enemy.size) {
+            enemy.dx *= -1;
+            newEnemyX = enemy.x + enemy.dx;
+        }
+        if (newEnemyY <= 0 || newEnemyY >= canvas.height - enemy.size) {
+            enemy.dy *= -1;
+            newEnemyY = enemy.y + enemy.dy;
+        }
+
+        if (!isCollidingWithObstacles(newEnemyX, enemy.y, enemy.size)) {
+            enemy.x = newEnemyX;
+        } else {
+            enemy.dx *= -1;
+        }
+        if (!isCollidingWithObstacles(enemy.x, newEnemyY, enemy.size)) {
+            enemy.y = newEnemyY;
+        } else {
+            enemy.dy *= -1;
+        }
+    });
+}
+
+function isCollidingWithObstacles(x, y, size) {
+    const rect = {
+        x: x,
+        y: y,
+        width: size,
+        height: size
+    };
+
+    return obstacles.some(obstacle => {
+        return isColliding(rect, obstacle);
+    });
+}
+
+function isCollidingWithPlayer(enemy) {
+    const enemyRect = {
+        x: enemy.x,
+        y: enemy.y,
+        width: enemy.size,
+        height: enemy.size
+    };
+
+    const playerRect = {
+        x: player.x,
+        y: player.y,
+        width: player.size,
+        height: player.size
+    };
+
+    return isColliding(enemyRect, playerRect);
+}
+
+function isCollidingWithGate(entity) {
+    const entityCircle = {
+        x: entity.x + entity.size / 2,
+        y: entity.y + entity.size / 2,
+        radius: entity.size / 2
+    };
+
+    const gateCircle = {
+        x: gate.x,
+        y: gate.y,
+        radius: gate.radius
+    };
+
+    return isCircleColliding(entityCircle, gateCircle);
+}
+
+function updatePlayerPosition() {
+    // Reset keyboard directional vectors
+    player.keyboard.dx = 0;
+    player.keyboard.dy = 0;
+
+    // Update keyboard directional vectors based on pressed keys
+    if (keysPressed.left) {
+        player.keyboard.dx -= 1;
+    }
+    if (keysPressed.right) {
+        player.keyboard.dx += 1;
+    }
+    if (keysPressed.up) {
+        player.keyboard.dy -= 1;
+    }
+    if (keysPressed.down) {
+        player.keyboard.dy += 1;
+    }
+
+    // Calculate the sum of keyboard and joystick inputs
+    let moveX = player.keyboard.dx + player.joystick.dx;
+    let moveY = player.keyboard.dy + player.joystick.dy;
+
+    // Calculate the length of the movement vector
+    const length = Math.sqrt(moveX * moveX + moveY * moveY);
+
+    if (length > 0) {
+        // Normalize the movement vector and scale by player's speed
+        moveX = (moveX / length) * player.speed;
+        moveY = (moveY / length) * player.speed;
+
+        // Calculate potential new positions
+        let newX = player.x + moveX;
+        let newY = player.y + moveY;
+
+        // Collision Detection
+        if (!isCollidingWithObstacles(newX, player.y, player.size)) {
+            player.x = newX;
+        }
+        if (!isCollidingWithObstacles(player.x, newY, player.size)) {
+            player.y = newY;
+        }
+
+        // Boundary Constraints
+        if (player.x < 0) player.x = 0;
+        if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
+        if (player.y < 0) player.y = 0;
+        if (player.y > canvas.height - player.size) player.y = canvas.height - player.size;
+    }
+
+    // Check for collisions
+    checkCollisionWithEnemies();
+    checkCollisionWithBat();
+    checkCollisionWithGate();
+}
+
+function checkCollisionWithEnemies() {
+    const playerRect = {
+        x: player.x,
+        y: player.y,
+        width: player.size,
+        height: player.size
+    };
+
+    enemies.forEach(enemy => {
+        const enemyRect = {
+            x: enemy.x,
+            y: enemy.y,
+            width: enemy.size,
+            height: enemy.size
+        };
+
+        if (isColliding(playerRect, enemyRect)) {
+            gameOver();
+        }
+    });
 }
 
 function checkCollisionWithBat() {
@@ -676,42 +668,39 @@ function checkCollisionWithBat() {
     }
 }
 
+function checkCollisionWithGate() {
+    const playerCircle = {
+        x: player.x + player.size / 2,
+        y: player.y + player.size / 2,
+        radius: player.size / 2
+    };
 
-function gameLoop() {
-    clearCanvas();
+    const gateCircle = {
+        x: gate.x,
+        y: gate.y,
+        radius: gate.radius
+    };
 
-    if (showingLevelCleared) {
-        drawLevelClearedScreen();
-    } else {
-        drawBackground();
-        updatePlayerPosition();
-        updateEnemies();
-        updateBat();     // Add this line
-        drawOutline();
-        drawObstacles();
-        drawEnemies();
-        drawBat();       // Add this line
-        drawGate();
-        drawPlayer();
-        drawHUD();
-        drawFlickeringLights();
-    }
-
-    requestAnimationFrame(gameLoop);
-}
-
-
-function drawOutline() {
-    if (!isMobileDevice()) {
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    if (isCircleColliding(playerCircle, gateCircle)) {
+        levelCleared();
     }
 }
 
-function clearCanvas() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function gameOver() {
+    if (levelClearedTimeout) {
+        clearTimeout(levelClearedTimeout);
+    }
+    alert('Game Over! You reached Level ' + level);
+    resetGame();
 }
+
+function resetGame() {
+    level = 1;
+    showingLevelCleared = false;
+    startLevel();
+}
+
+// Drawing functions
 
 function drawLevelClearedScreen() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -723,39 +712,28 @@ function drawLevelClearedScreen() {
     ctx.fillText('Level Cleared!', canvas.width / 2, canvas.height / 2);
 }
 
-function drawGate() {
-    ctx.save();
-
-    ctx.shadowColor = 'rgba(150, 44, 150, 0.7)'; // Adjusted for better visibility
-    ctx.shadowBlur = 20;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-
-    ctx.beginPath();
-    ctx.arc(gate.x, gate.y, gate.radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#800080';
-    ctx.fill();
-
-    ctx.restore();
+function drawOutline() {
+    if (!isMobileDevice()) {
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    }
 }
 
 function drawBackground() {
     // Create a linear gradient for the background
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
 
-    // Define the starting color stop (you can customize this)
-    gradient.addColorStop(0, '#000000'); // Black or any other base color
+    // Define the starting color stop
+    gradient.addColorStop(0, '#000000'); // Black
 
     // Use randomNumberColor to set the second color stop
     if (randomNumberColor === 1) {
         gradient.addColorStop(1, '#4f0000'); // Dark red
-        console.log("Background Color: Dark Red");
     } else if (randomNumberColor === 2) {
         gradient.addColorStop(1, '#2f3626'); // Dark green
-        console.log("Background Color: Dark Green");
     } else {
         gradient.addColorStop(1, '#291045'); // Dark purple
-        console.log("Background Color: Dark Purple");
     }
 
     // Apply the gradient as the fill style and draw the background
@@ -764,7 +742,7 @@ function drawBackground() {
 }
 
 function drawFlickeringLights() {
-    flickeringLights.forEach((light, index) => {
+    flickeringLights.forEach((light) => {
         // Calculate flickering opacity
         const flicker = light.baseOpacity + (Math.random() * 2 - 1) * light.flickerRange;
         const clampedFlicker = Math.min(Math.max(flicker, 0), 1); // Ensure opacity is between 0 and 1
@@ -787,6 +765,22 @@ function drawFlickeringLights() {
         ctx.arc(light.x, light.y, light.radius, 0, Math.PI * 2);
         ctx.fill();
     });
+}
+
+function drawGate() {
+    ctx.save();
+
+    ctx.shadowColor = 'rgba(150, 44, 150, 0.7)'; // Adjusted for better visibility
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    ctx.beginPath();
+    ctx.arc(gate.x, gate.y, gate.radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#800080';
+    ctx.fill();
+
+    ctx.restore();
 }
 
 function drawPlayer() {
@@ -850,41 +844,83 @@ function drawPlayer() {
     ctx.fill();
 }
 
+function drawEnemy(enemy) {
+    const centerX = enemy.x + enemy.size / 2;
+    const centerY = enemy.y + enemy.size / 2;
+    const bodyWidth = enemy.size * 0.6;
+    const bodyHeight = enemy.size * 0.6;
+
+    ctx.save();
+
+    // Move to the center of the bat
+    ctx.translate(centerX, centerY);
+
+    // Draw bat wings
+    ctx.fillStyle = '#4B2E83';
+
+    // Left wing
+    ctx.beginPath();
+    ctx.moveTo(-bodyWidth / 2, 0);
+    ctx.lineTo(-bodyWidth * 1.5, -bodyHeight / 2);
+    ctx.lineTo(-bodyWidth, bodyHeight / 2);
+    ctx.fill();
+
+    // Right wing
+    ctx.beginPath();
+    ctx.moveTo(bodyWidth / 2, 0);
+    ctx.lineTo(bodyWidth * 1.5, -bodyHeight / 2);
+    ctx.lineTo(bodyWidth, bodyHeight / 2);
+    ctx.fill();
+
+    // Draw bat body (ellipse)
+    ctx.fillStyle = '#4B2E83';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, bodyWidth / 2, bodyHeight / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw bat eyes
+    ctx.fillStyle = '#FFFFFF';
+    const eyeOffsetX = bodyWidth * 0.15;
+    const eyeOffsetY = -bodyHeight * 0.1;
+    const eyeRadius = bodyWidth * 0.08;
+    ctx.beginPath();
+    ctx.arc(-eyeOffsetX, eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+    ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw pupils
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(-eyeOffsetX, eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
+    ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
 function drawEnemies() {
     enemies.forEach(enemy => {
         drawEnemy(enemy);
     });
 }
 
-
 function drawObstacles() {
     obstacles.forEach(obstacle => {
-        // Move to obstacle position
         ctx.save();
         ctx.translate(obstacle.x, obstacle.y);
 
         // Flickering effect for the glow
         const flicker = Math.random() * 0.3 + 0.7; // Opacity between 0.7 and 1
 
-        // **First, draw the glow behind the shape**
-
-        // Save context before applying glow settings
+        // Draw the glow behind the shape
         ctx.save();
-
-        // Set glow properties
-        ctx.shadowColor = `rgba(255, 223, 0, ${flicker * 0.5})`; // Yellow glow with variable opacity
+        ctx.shadowColor = `rgba(255, 223, 0, ${flicker * 0.5})`; // Yellow glow
         ctx.shadowBlur = 15;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
-
-        // Draw a transparent rectangle to create the glow effect
-        ctx.fillStyle = 'rgba(0, 0, 0, 0)'; // Transparent fill
+        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
         ctx.fillRect(0, 0, obstacle.width, obstacle.height);
-
-        // Restore context to remove glow settings
         ctx.restore();
-
-        // **Then, draw the obstacle shape on top without glow**
 
         // Create a vertical gradient for the obstacle
         const gradient = ctx.createLinearGradient(0, 0, 0, obstacle.height);
@@ -898,15 +934,9 @@ function drawObstacles() {
         ctx.rect(0, 0, obstacle.width, obstacle.height);
         ctx.fill();
 
-        // Restore context to original state
         ctx.restore();
     });
 }
-
-
-
-
-
 
 function drawHUD() {
     ctx.fillStyle = '#ffffff';
@@ -915,224 +945,6 @@ function drawHUD() {
     ctx.fillText('Level: ' + level, 10, 30);
 }
 
-
-function updatePlayerPosition() {
-    // Reset keyboard directional vectors
-    player.keyboard.dx = 0;
-    player.keyboard.dy = 0;
-
-    // Update keyboard directional vectors based on pressed keys
-    if (keysPressed.left) {
-        player.keyboard.dx -= 1;
-    }
-    if (keysPressed.right) {
-        player.keyboard.dx += 1;
-    }
-    if (keysPressed.up) {
-        player.keyboard.dy -= 1;
-    }
-    if (keysPressed.down) {
-        player.keyboard.dy += 1;
-    }
-
-    // Calculate the sum of keyboard and joystick inputs
-    let moveX = player.keyboard.dx + player.joystick.dx;
-    let moveY = player.keyboard.dy + player.joystick.dy;
-
-    // Calculate the length of the movement vector
-    const length = Math.sqrt(moveX * moveX + moveY * moveY);
-
-    if (length > 0) {
-        // Normalize the movement vector and scale by player's speed
-        moveX = (moveX / length) * player.speed;
-        moveY = (moveY / length) * player.speed;
-
-        // Calculate potential new positions
-        let newX = player.x + moveX;
-        let newY = player.y + moveY;
-
-        // Collision Detection
-        if (!isCollidingWithObstacles(newX, player.y, player.size)) {
-            player.x = newX;
-        }
-        if (!isCollidingWithObstacles(player.x, newY, player.size)) {
-            player.y = newY;
-        }
-
-        // Boundary Constraints
-        if (player.x < 0) player.x = 0;
-        if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
-        if (player.y < 0) player.y = 0;
-        if (player.y > canvas.height - player.size) player.y = canvas.height - player.size;
-    }
-
-    // Check for collisions
-    checkCollisionWithEnemies();
-    checkCollisionWithBat();
-    checkCollisionWithGate();
-}
-
-function updateEnemies() {
-    enemies.forEach(enemy => {
-        let newEnemyX = enemy.x + enemy.dx;
-        let newEnemyY = enemy.y + enemy.dy;
-
-        if (newEnemyX <= 0 || newEnemyX >= canvas.width - enemy.size) {
-            enemy.dx *= -1;
-            newEnemyX = enemy.x + enemy.dx;
-        }
-        if (newEnemyY <= 0 || newEnemyY >= canvas.height - enemy.size) {
-            enemy.dy *= -1;
-            newEnemyY = enemy.y + enemy.dy;
-        }
-
-        if (!isCollidingWithObstacles(newEnemyX, enemy.y, enemy.size)) {
-            enemy.x = newEnemyX;
-        } else {
-            enemy.dx *= -1;
-        }
-        if (!isCollidingWithObstacles(enemy.x, newEnemyY, enemy.size)) {
-            enemy.y = newEnemyY;
-        } else {
-            enemy.dy *= -1;
-        }
-    });
-}
-
-function isCollidingWithObstacles(x, y, size) {
-    const rect = {
-        x: x,
-        y: y,
-        width: size,
-        height: size
-    };
-
-    return obstacles.some(obstacle => {
-        return isColliding(rect, obstacle);
-    });
-}
-
-function isCollidingWithPlayer(enemy) {
-    const enemyRect = {
-        x: enemy.x,
-        y: enemy.y,
-        width: enemy.size,
-        height: enemy.size
-    };
-
-    const playerRect = {
-        x: player.x,
-        y: player.y,
-        width: player.size,
-        height: player.size
-    };
-
-    return isColliding(enemyRect, playerRect);
-}
-
-function isColliding(rect1, rect2) {
-    return (
-        rect1.x < rect2.x + rect2.width &&
-        rect1.x + rect1.width > rect2.x &&
-        rect1.y < rect2.y + rect2.height &&
-        rect1.y + rect1.height > rect2.y
-    );
-}
-
-function isCircleColliding(circle1, circle2) {
-    const dx = circle1.x - circle2.x;
-    const dy = circle1.y - circle2.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    return distance < circle1.radius + circle2.radius;
-}
-
-function isRectCircleColliding(rect, circle) {
-    const distX = Math.abs(circle.x - rect.x - rect.width / 2);
-    const distY = Math.abs(circle.y - rect.y - rect.height / 2);
-
-    if (distX > (rect.width / 2 + circle.radius)) { return false; }
-    if (distY > (rect.height / 2 + circle.radius)) { return false; }
-
-    if (distX <= (rect.width / 2)) { return true; }
-    if (distY <= (rect.height / 2)) { return true; }
-
-    const dx = distX - rect.width / 2;
-    const dy = distY - rect.height / 2;
-    return (dx * dx + dy * dy <= (circle.radius * circle.radius));
-}
-
-function checkCollisionWithEnemies() {
-    const playerRect = {
-        x: player.x,
-        y: player.y,
-        width: player.size,
-        height: player.size
-    };
-
-    enemies.forEach(enemy => {
-        const enemyRect = {
-            x: enemy.x,
-            y: enemy.y,
-            width: enemy.size,
-            height: enemy.size
-        };
-
-        if (isColliding(playerRect, enemyRect)) {
-            gameOver();
-        }
-    });
-}
-
-function checkCollisionWithGate() {
-    const playerCircle = {
-        x: player.x + player.size / 2,
-        y: player.y + player.size / 2,
-        radius: player.size / 2
-    };
-
-    const gateCircle = {
-        x: gate.x,
-        y: gate.y,
-        radius: gate.radius
-    };
-
-    if (isCircleColliding(playerCircle, gateCircle)) {
-        levelCleared();
-    }
-}
-
-function isCollidingWithGate(enemy) {
-    const enemyCircle = {
-        x: enemy.x + enemy.size / 2,
-        y: enemy.y + enemy.size / 2,
-        radius: enemy.size / 2
-    };
-
-    const gateCircle = {
-        x: gate.x,
-        y: gate.y,
-        radius: gate.radius
-    };
-
-    return isCircleColliding(enemyCircle, gateCircle);
-}
-
-function gameOver() {
-    if (levelClearedTimeout) {
-        clearTimeout(levelClearedTimeout);
-    }
-    alert('Game Over! You reached Level ' + level);
-    resetGame();
-}
-
-function resetGame() {
-    level = 1;
-    showingLevelCleared = false;
-    startLevel();
-}
-
-// Virtual joystick setup using nippleJS
 // Virtual joystick setup using nippleJS
 const joystickOptions = {
     zone: document.getElementById('joystick-container'),
@@ -1161,5 +973,29 @@ function updateJoystickPosition() {
 // Call this after creating the joystick
 updateJoystickPosition();
 
-// Also update on window resize
+// Update on window resize
 window.addEventListener('resize', updateJoystickPosition);
+
+// Joystick event handlers
+joystick.on('move', function(evt, data) {
+    if (data.angle) {
+        const angle = data.angle.radian;
+        const distance = data.distance;
+
+        // Calculate joystick input as a normalized vector scaled by the distance
+        const maxDistance = joystickOptions.size;
+        const normalizedDistance = Math.min(distance, maxDistance) / maxDistance; // Clamp between 0 and 1
+
+        player.joystick.dx = Math.cos(angle) * normalizedDistance;
+        player.joystick.dy = Math.sin(angle) * normalizedDistance;
+
+        // Invert dy to align with canvas Y-axis
+        player.joystick.dy = -player.joystick.dy;
+    }
+});
+
+joystick.on('end', function() {
+    // Reset joystick movement when not active
+    player.joystick.dx = 0;
+    player.joystick.dy = 0;
+});

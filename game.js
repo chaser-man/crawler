@@ -2,9 +2,6 @@
 
 // Game variables and initialization
 
-// Get the canvas and context (if not already obtained)
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
 
 // Enhanced player object with separate input tracking
 const player = {

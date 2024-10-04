@@ -4,11 +4,13 @@ body {
     touch-action: none;
     background-color: #000;
 }
+
 #gameCanvas {
     display: block;
     margin: 0 auto;
     background-color: #000;
 }
+
 #joystick-container {
     position: absolute;
     bottom: 20px;

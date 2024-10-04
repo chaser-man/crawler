@@ -1,21 +1,18 @@
 body {
     margin: 0;
-    overflow: hidden; /* Prevent scrolling */
-    touch-action: none; /* Prevent touch interactions from triggering browser actions */
+    overflow: hidden;
+    touch-action: none;
+    background-color: #000;
 }
-
 #gameCanvas {
     display: block;
     margin: 0 auto;
-    background-color: #000; /* Canvas background color */
+    background-color: #000;
 }
-
 #joystick-container {
     position: absolute;
     bottom: 20px;
-    right: 20px; /* Joystick container anchored to the right side */
+    right: 20px;
     width: 150px;
     height: 150px;
 }
-
-

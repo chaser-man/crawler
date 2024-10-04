@@ -11,15 +11,14 @@ function isMobileDevice() {
 
 // Resize canvas to fit the window or set fixed size for desktop
 function resizeCanvas() {
-    if (isMobileDevice()) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    } else {
-        canvas.width = 375;
-        canvas.height = 667;
-    }
+    const container = document.getElementById('game-container');
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
 }
 
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
@@ -52,6 +51,8 @@ let level = 1;
 let showingLevelCleared = false;
 let levelClearedTimeout;
 let randomNumberColor; // Global variable
+let bat = null;
+
 
 // Define the keys for movement
 const KEY_CODES = {
@@ -156,15 +157,210 @@ function startLevel() {
     gate.x = Math.random() * (canvas.width - gate.radius * 2) + gate.radius;
     gate.y = gate.radius + 10;
 
-    initObstacles(); // Updated to ensure paths are wide enough
-    initEnemies(1 + (level - 1));
+    initObstacles();
+    initEnemies(level); // Initialize 'level' number of normal enemies
+    initBat();          // Initialize the following bat
 
-    generateFlickeringLights(); // Generate new flickering lights for the level
+    generateFlickeringLights();
 
-    // Assign a new random color for the background
     randomNumberColor = getRandomColorNumber();
-    console.log("New Round Color Number:", randomNumberColor); // Debugging
+    console.log("New Round Color Number:", randomNumberColor);
 }
+function initBat() {
+    const batSize = 30; // Match enemy size
+    bat = {
+        x: 0,
+        y: 0,
+        size: batSize,
+        speed: 0.5
+    };
+
+    let placed = false;
+    let attempts = 0;
+
+    while (!placed && attempts < 100) {
+        bat.x = Math.random() * (canvas.width - bat.size);
+        bat.y = Math.random() * (canvas.height - bat.size);
+
+        if (
+            !isCollidingWithObstacles(bat.x, bat.y, bat.size) &&
+            !isCollidingWithPlayer(bat) &&
+            !isCollidingWithGate(bat) &&
+            !enemies.some(existingEnemy => isColliding(bat, existingEnemy))
+        ) {
+            placed = true;
+        }
+        attempts++;
+    }
+
+    if (!placed) {
+        console.warn('Could not place bat after 100 attempts.');
+    }
+}
+
+function drawEnemy(enemy) {
+    const centerX = enemy.x + enemy.size / 2;
+    const centerY = enemy.y + enemy.size / 2;
+    const bodyWidth = enemy.size * 0.6;
+    const bodyHeight = enemy.size * 0.6;
+
+    ctx.save();
+
+    // Move to the center of the bat
+    ctx.translate(centerX, centerY);
+
+    // === Draw detailed bat wings (lifted higher) ===
+    ctx.fillStyle = '#4B2E83';
+
+    // Left wing
+    ctx.beginPath();
+    ctx.moveTo(-bodyWidth / 2, -bodyHeight * 0.3); // Lifted higher
+    ctx.lineTo(-bodyWidth * 1.6, -bodyHeight * 0.6); // Adjusted upward
+    ctx.lineTo(-bodyWidth * 1.3, bodyHeight * 0.1);
+    ctx.lineTo(-bodyWidth * 1.6, bodyHeight * 0.7);
+    ctx.lineTo(-bodyWidth / 2, bodyHeight * 0.5);
+    ctx.quadraticCurveTo(-bodyWidth * 0.9, bodyHeight * 0.0, -bodyWidth / 2, -bodyHeight * 0.3);
+    ctx.closePath();
+    ctx.fill();
+
+    // Right wing
+    ctx.beginPath();
+    ctx.moveTo(bodyWidth / 2, -bodyHeight * 0.3); // Lifted higher
+    ctx.lineTo(bodyWidth * 1.6, -bodyHeight * 0.6); // Adjusted upward
+    ctx.lineTo(bodyWidth * 1.3, bodyHeight * 0.1);
+    ctx.lineTo(bodyWidth * 1.6, bodyHeight * 0.7);
+    ctx.lineTo(bodyWidth / 2, bodyHeight * 0.5);
+    ctx.quadraticCurveTo(bodyWidth * 0.9, bodyHeight * 0.0, bodyWidth / 2, -bodyHeight * 0.3);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw wing membranes (details)
+    ctx.strokeStyle = '#2E1A47'; // Darker shade for wing details
+    ctx.lineWidth = 1;
+
+    // Left wing details
+    ctx.beginPath();
+    ctx.moveTo(-bodyWidth / 2, -bodyHeight * 0.3);
+    ctx.lineTo(-bodyWidth * 1.3, bodyHeight * 0.1);
+    ctx.moveTo(-bodyWidth / 2, -bodyHeight * 0.3);
+    ctx.lineTo(-bodyWidth * 1.2, bodyHeight * 0.3);
+    ctx.moveTo(-bodyWidth / 2, -bodyHeight * 0.3);
+    ctx.lineTo(-bodyWidth * 1.1, bodyHeight * 0.5);
+    ctx.stroke();
+
+    // Right wing details
+    ctx.beginPath();
+    ctx.moveTo(bodyWidth / 2, -bodyHeight * 0.3);
+    ctx.lineTo(bodyWidth * 1.3, bodyHeight * 0.1);
+    ctx.moveTo(bodyWidth / 2, -bodyHeight * 0.3);
+    ctx.lineTo(bodyWidth * 1.2, bodyHeight * 0.3);
+    ctx.moveTo(bodyWidth / 2, -bodyHeight * 0.3);
+    ctx.lineTo(bodyWidth * 1.1, bodyHeight * 0.5);
+    ctx.stroke();
+
+    // === Draw additional parts (arms) ===
+    ctx.fillStyle = '#4B2E83';
+
+    ctx.beginPath();
+    ctx.moveTo(-bodyWidth / 2, -bodyHeight * 0.1);
+    ctx.bezierCurveTo(
+        -bodyWidth * 1.2, bodyHeight * 0.1,
+        -bodyWidth * 1.2, bodyHeight * 0.9,
+        -bodyWidth / 2, bodyHeight * 1.0
+    );
+    ctx.lineTo(-bodyWidth / 2, bodyHeight * 0.6);
+    ctx.bezierCurveTo(
+        -bodyWidth * 0.8, bodyHeight * 0.7,
+        -bodyWidth * 0.8, bodyHeight * 0.3,
+        -bodyWidth / 2, bodyHeight * 0.1
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(bodyWidth / 2, -bodyHeight * 0.1);
+    ctx.bezierCurveTo(
+        bodyWidth * 1.2, bodyHeight * 0.1,
+        bodyWidth * 1.2, bodyHeight * 0.9,
+        bodyWidth / 2, bodyHeight * 1.0
+    );
+    ctx.lineTo(bodyWidth / 2, bodyHeight * 0.6);
+    ctx.bezierCurveTo(
+        bodyWidth * 0.8, bodyHeight * 0.7,
+        bodyWidth * 0.8, bodyHeight * 0.3,
+        bodyWidth / 2, bodyHeight * 0.1
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    // === Draw bat body and facial features ===
+
+    // Draw bat body (ellipse)
+    ctx.fillStyle = '#4B2E83'; // Dark purple color for the bat body
+    ctx.beginPath();
+    ctx.ellipse(0, 0, bodyWidth / 2, bodyHeight / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw bat head
+    ctx.beginPath();
+    ctx.ellipse(0, -bodyHeight * 0.6, bodyWidth * 0.4, bodyHeight * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw bat ears
+    ctx.beginPath();
+    ctx.moveTo(-bodyWidth * 0.2, -bodyHeight * 0.9);
+    ctx.lineTo(-bodyWidth * 0.35, -bodyHeight * 1.2);
+    ctx.lineTo(0, -bodyHeight * 1.0);
+    ctx.lineTo(bodyWidth * 0.35, -bodyHeight * 1.2);
+    ctx.lineTo(bodyWidth * 0.2, -bodyHeight * 0.9);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw bat eyes
+    ctx.fillStyle = '#FFFFFF';
+    const eyeOffsetX = bodyWidth * 0.15;
+    const eyeOffsetY = -bodyHeight * 0.6;
+    const eyeRadius = bodyWidth * 0.08;
+    ctx.beginPath();
+    ctx.arc(-eyeOffsetX, eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+    ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw pupils
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(-eyeOffsetX, eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
+    ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw bat mouth and fangs
+    ctx.strokeStyle = '#FF0000';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-bodyWidth * 0.05, -bodyHeight * 0.5);
+    ctx.lineTo(0, -bodyHeight * 0.45);
+    ctx.lineTo(bodyWidth * 0.05, -bodyHeight * 0.5);
+    ctx.stroke();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.moveTo(-bodyWidth * 0.02, -bodyHeight * 0.45);
+    ctx.lineTo(0, -bodyHeight * 0.4);
+    ctx.lineTo(bodyWidth * 0.02, -bodyHeight * 0.45);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+
+
+
+
+
+
+
+
+
 
 function levelCleared() {
     showingLevelCleared = true;
@@ -396,7 +592,8 @@ function initEnemies(numEnemies) {
 
         let placed = false;
         let attempts = 0;
-        while (!placed && attempts < 100) { // Added attempts limiter
+
+        while (!placed && attempts < 100) {
             enemy.x = Math.random() * (canvas.width - enemy.size);
             enemy.y = Math.random() * ((canvas.height / 2) - enemy.size);
 
@@ -424,6 +621,62 @@ function initEnemies(numEnemies) {
     }
 }
 
+function updateBat() {
+    if (!bat) return;
+
+    // Calculate direction vector from bat to player
+    const dx = (player.x + player.size / 2) - (bat.x + bat.size / 2);
+    const dy = (player.y + player.size / 2) - (bat.y + bat.size / 2);
+
+    // Calculate the distance
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance > 0) {
+        // Normalize the vector and multiply by speed
+        const moveX = (dx / distance) * bat.speed;
+        const moveY = (dy / distance) * bat.speed;
+
+        // Calculate new position
+        let newBatX = bat.x + moveX;
+        let newBatY = bat.y + moveY;
+
+        // Collision detection with obstacles
+        if (!isCollidingWithObstacles(newBatX, bat.y, bat.size)) {
+            bat.x = newBatX;
+        }
+        if (!isCollidingWithObstacles(bat.x, newBatY, bat.size)) {
+            bat.y = newBatY;
+        }
+    }
+}
+function drawBat() {
+    if (!bat) return;
+    drawEnemy(bat);
+}
+
+function checkCollisionWithBat() {
+    if (!bat) return;
+
+    const playerRect = {
+        x: player.x,
+        y: player.y,
+        width: player.size,
+        height: player.size
+    };
+
+    const batRect = {
+        x: bat.x,
+        y: bat.y,
+        width: bat.size,
+        height: bat.size
+    };
+
+    if (isColliding(playerRect, batRect)) {
+        gameOver();
+    }
+}
+
+
 function gameLoop() {
     clearCanvas();
 
@@ -433,18 +686,20 @@ function gameLoop() {
         drawBackground();
         updatePlayerPosition();
         updateEnemies();
+        updateBat();     // Add this line
         drawOutline();
         drawObstacles();
         drawEnemies();
+        drawBat();       // Add this line
         drawGate();
         drawPlayer();
         drawHUD();
-        drawFlickeringLights(); // Draw flickering lights
-        //drawFog(); // Draw fog overlay
+        drawFlickeringLights();
     }
 
     requestAnimationFrame(gameLoop);
 }
+
 
 function drawOutline() {
     if (!isMobileDevice()) {
@@ -597,65 +852,10 @@ function drawPlayer() {
 
 function drawEnemies() {
     enemies.forEach(enemy => {
-        const centerX = enemy.x + enemy.size / 2;
-        const centerY = enemy.y + enemy.size / 2;
-        const bodyWidth = enemy.size / 2;
-        const bodyHeight = enemy.size / 2;
-
-        ctx.fillStyle = '#8B4513';
-        ctx.beginPath();
-        ctx.ellipse(centerX, centerY, bodyWidth / 2, bodyHeight / 2, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#8B4513';
-
-        ctx.beginPath();
-        ctx.moveTo(centerX - bodyWidth / 2, centerY);
-        ctx.bezierCurveTo(
-            centerX - bodyWidth * 2, centerY - bodyHeight * 1.5,
-            centerX - bodyWidth * 2, centerY + bodyHeight * 1.5,
-            centerX - bodyWidth / 2, centerY
-        );
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(centerX + bodyWidth / 2, centerY);
-        ctx.bezierCurveTo(
-            centerX + bodyWidth * 2, centerY - bodyHeight * 1.5,
-            centerX + bodyWidth * 2, centerY + bodyHeight * 1.5,
-            centerX + bodyWidth / 2, centerY
-        );
-        ctx.fill();
-
-        ctx.fillStyle = '#8B4513';
-        ctx.beginPath();
-        ctx.moveTo(centerX - bodyWidth / 4, centerY - bodyHeight / 2);
-        ctx.lineTo(centerX - bodyWidth / 2, centerY - bodyHeight);
-        ctx.lineTo(centerX, centerY - bodyHeight / 2);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(centerX + bodyWidth / 4, centerY - bodyHeight / 2);
-        ctx.lineTo(centerX + bodyWidth / 2, centerY - bodyHeight);
-        ctx.lineTo(centerX, centerY - bodyHeight / 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#FFFFFF';
-        const eyeOffsetX = bodyWidth / 4;
-        const eyeOffsetY = bodyHeight / 4;
-        const eyeRadius = bodyWidth / 6;
-        ctx.beginPath();
-        ctx.arc(centerX - eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
-        ctx.arc(centerX + eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#FF0000';
-        ctx.beginPath();
-        ctx.arc(centerX - eyeOffsetX, centerY - eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
-        ctx.arc(centerX + eyeOffsetX, centerY - eyeOffsetY, eyeRadius / 2, 0, Math.PI * 2);
-        ctx.fill();
+        drawEnemy(enemy);
     });
 }
+
 
 function drawObstacles() {
     obstacles.forEach(obstacle => {
@@ -715,6 +915,7 @@ function drawHUD() {
     ctx.fillText('Level: ' + level, 10, 30);
 }
 
+
 function updatePlayerPosition() {
     // Reset keyboard directional vectors
     player.keyboard.dx = 0;
@@ -767,6 +968,7 @@ function updatePlayerPosition() {
 
     // Check for collisions
     checkCollisionWithEnemies();
+    checkCollisionWithBat();
     checkCollisionWithGate();
 }
 
@@ -931,35 +1133,33 @@ function resetGame() {
 }
 
 // Virtual joystick setup using nippleJS
+// Virtual joystick setup using nippleJS
 const joystickOptions = {
     zone: document.getElementById('joystick-container'),
     mode: 'static',
     position: { right: '50px', bottom: '50px' },
     color: 'white',
-    size: 100
+    size: 80  // Slightly smaller size to fit better in phone layout
 };
 
 const joystick = nipplejs.create(joystickOptions);
 
-joystick.on('move', function(evt, data) {
-    if (data.angle) {
-        const angle = data.angle.radian;
-        const distance = data.distance;
-
-        // Calculate joystick input as a normalized vector scaled by the distance
-        const maxDistance = joystickOptions.size;
-        const normalizedDistance = Math.min(distance, maxDistance) / maxDistance; // Clamp between 0 and 1
-
-        player.joystick.dx = Math.cos(angle) * normalizedDistance;
-        player.joystick.dy = Math.sin(angle) * normalizedDistance;
-
-        // Invert dy to align with canvas Y-axis
-        player.joystick.dy = -player.joystick.dy;
+// Update joystick position based on device type
+function updateJoystickPosition() {
+    const container = document.getElementById('joystick-container');
+    if (!isMobileDevice()) {
+        container.style.position = 'absolute';
+        container.style.right = '20px';
+        container.style.bottom = '20px';
+    } else {
+        container.style.position = 'fixed';
+        container.style.right = '20px';
+        container.style.bottom = '20px';
     }
-});
+}
 
-joystick.on('end', function() {
-    // Reset joystick movement when not active
-    player.joystick.dx = 0;
-    player.joystick.dy = 0;
-});
+// Call this after creating the joystick
+updateJoystickPosition();
+
+// Also update on window resize
+window.addEventListener('resize', updateJoystickPosition);

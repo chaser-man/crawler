@@ -1,85 +1,69 @@
+// logic.js
+
+// Utility functions and global variables
+
 // Get the canvas and context
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Resize canvas to fit the window
+// Function to check if the device is mobile
+function isMobileDevice() {
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+// Resize canvas to fit the window or set fixed size for desktop
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    if (isMobileDevice()) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    } else {
+        canvas.width = 375;
+        canvas.height = 667;
+    }
 }
 
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// Player object
-const player = {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    size: 20,
-    speed: 2, // Adjust speed as needed
-    dx: 0,
-    dy: 0
-};
-
-// Function to draw the player
-function drawPlayer() {
-    ctx.fillStyle = '#ff6600';
-    ctx.fillRect(player.x, player.y, player.size, player.size);
-}
-
-// Function to clear the canvas
+// Clear the canvas
 function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-// Game loop
-function gameLoop() {
-    clearCanvas();
-    updatePlayerPosition();
-    drawPlayer();
-    requestAnimationFrame(gameLoop);
+// Collision detection functions
+function isColliding(rect1, rect2) {
+    return (
+        rect1.x < rect2.x + rect2.width &&
+        rect1.x + rect1.width > rect2.x &&
+        rect1.y < rect2.y + rect2.height &&
+        rect1.y + rect1.height > rect2.y
+    );
 }
 
-gameLoop();
+function isCircleColliding(circle1, circle2) {
+    const dx = circle1.x - circle2.x;
+    const dy = circle1.y - circle2.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
-// Update player position
-function updatePlayerPosition() {
-    player.x += player.dx;
-    player.y += player.dy;
-
-    // Keep the player within the canvas boundaries
-    if (player.x < 0) player.x = 0;
-    if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
-    if (player.y < 0) player.y = 0;
-    if (player.y > canvas.height - player.size) player.y = canvas.height - player.size;
+    return distance < circle1.radius + circle2.radius;
 }
 
-// Virtual joystick setup using nippleJS
-const joystickOptions = {
-    zone: document.getElementById('joystick-container'),
-    mode: 'static',
-    position: { left: '75px', bottom: '75px' }, // Position the joystick
-    color: 'white',
-    size: 100
-};
+function isRectCircleColliding(rect, circle) {
+    const distX = Math.abs(circle.x - rect.x - rect.width / 2);
+    const distY = Math.abs(circle.y - rect.y - rect.height / 2);
 
-const joystick = nipplejs.create(joystickOptions);
+    if (distX > (rect.width / 2 + circle.radius)) { return false; }
+    if (distY > (rect.height / 2 + circle.radius)) { return false; }
 
-joystick.on('move', function(evt, data) {
-    const angle = data.angle.degree;
-    const distance = data.distance;
+    if (distX <= (rect.width / 2)) { return true; }
+    if (distY <= (rect.height / 2)) { return true; }
 
-    // Calculate movement direction based on the joystick angle
-    const radian = (angle * Math.PI) / 180;
-    player.dx = Math.cos(radian) * player.speed * (distance / joystickOptions.size);
-    player.dy = Math.sin(radian) * player.speed * (distance / joystickOptions.size);
+    const dx = distX - rect.width / 2;
+    const dy = distY - rect.height / 2;
+    return (dx * dx + dy * dy <= (circle.radius * circle.radius));
+}
 
-    // Invert dy because canvas y-axis is inverted
-    player.dy = -player.dy;
-});
-
-joystick.on('end', function() {
-    // Stop the player when the joystick is released
-    player.dx = 0;
-    player.dy = 0;
-});
+// Helper function to get a random number between 1 and 3
+function getRandomColorNumber() {
+    return Math.floor(Math.random() * 3) + 1; // Returns 1, 2, or 3
+}
